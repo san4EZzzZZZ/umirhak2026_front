@@ -6,6 +6,8 @@ import { ROLES, cabinetPathForRole } from "../auth/authPaths.js";
 import { validateDemoCredentials } from "../auth/demoAccounts.js";
 import AuthShell from "../components/AuthShell.jsx";
 import DemoCredentialsPanel from "../components/DemoCredentialsPanel.jsx";
+import PasswordField from "../components/PasswordField.jsx";
+import { resolveSessionProfile } from "../auth/sessionProfile.js";
 import { useSubmitRipple } from "../hooks/useSubmitRipple.js";
 
 export default function UniversityLoginPage() {
@@ -37,7 +39,8 @@ export default function UniversityLoginPage() {
     }
     triggerRipple();
     const persist = fd.get("remember") === "on";
-    signIn({ role: ROLES.university, login, persist });
+    const { firstName, lastName } = resolveSessionProfile(login);
+    signIn({ role: ROLES.university, login, persist, firstName, lastName });
     navigate(cabinetPathForRole(ROLES.university));
   };
 
@@ -76,17 +79,13 @@ export default function UniversityLoginPage() {
               className="field__input"
             />
           </label>
-          <label className="field">
-            <span className="field__label">Пароль</span>
-            <input
-              type="password"
-              name="password"
-              autoComplete="current-password"
-              required
-              placeholder="••••••••"
-              className="field__input"
-            />
-          </label>
+          <PasswordField
+            label="Пароль"
+            name="password"
+            autoComplete="current-password"
+            required
+            placeholder="••••••••"
+          />
 
           <div className="form-row">
             <label className="checkbox">

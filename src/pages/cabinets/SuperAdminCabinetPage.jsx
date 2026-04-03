@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import * as platformAdminsApi from "../../api/adminPlatformAdminsApi.js";
 import CabinetShell from "../../components/CabinetShell.jsx";
+import PasswordField from "../../components/PasswordField.jsx";
 import "./cabinet.css";
 
 export default function SuperAdminCabinetPage() {
@@ -100,17 +101,15 @@ export default function SuperAdminCabinetPage() {
               <span className="cabinet-field__label">ФИО</span>
               <input className="cabinet-field__input" name="fullName" required placeholder="Петров Пётр Петрович" />
             </label>
-            <label className="cabinet-field admin-user-form__full">
-              <span className="cabinet-field__label">Временный пароль</span>
-              <input
-                className="cabinet-field__input"
-                name="temporaryPassword"
-                type="password"
-                required
-                placeholder="Передайте администратору отдельным каналом"
-                autoComplete="new-password"
-              />
-            </label>
+            <PasswordField
+              variant="cabinet"
+              className="admin-user-form__full"
+              label="Временный пароль"
+              name="temporaryPassword"
+              required
+              placeholder="Передайте администратору отдельным каналом"
+              autoComplete="new-password"
+            />
           </div>
           <div className="cabinet-actions" style={{ marginTop: "1rem" }}>
             <button type="submit" className="btn btn--primary" disabled={submitting}>

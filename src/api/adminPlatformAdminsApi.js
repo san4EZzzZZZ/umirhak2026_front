@@ -39,6 +39,25 @@ function normalizeLogin(login) {
   return String(login).trim().toLowerCase();
 }
 
+/** Фамилия + имя из строки ФИО (русский порядок: первое слово — фамилия). */
+function splitFullNameToParts(fullName) {
+  const parts = String(fullName).trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return { firstName: "", lastName: "" };
+  if (parts.length === 1) return { firstName: "", lastName: parts[0] };
+  return { lastName: parts[0], firstName: parts[1] };
+}
+
+/**
+ * Имя для шапки кабинета: администраторы, созданные суперпользователем (только localStorage).
+ * @returns {{ firstName: string, lastName: string } | null}
+ */
+export function getPlatformAdminProfileNames(login) {
+  const L = normalizeLogin(login);
+  const x = readExtras().find((i) => normalizeLogin(i.login) === L);
+  if (!x) return null;
+  return splitFullNameToParts(x.fullName);
+}
+
 /**
  * Проверка входа администратора: демо-админ из константы + созданные суперпользователем (локально).
  */

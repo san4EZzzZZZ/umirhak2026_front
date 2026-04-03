@@ -4,6 +4,7 @@ import * as authApi from "../api/authApi.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { cabinetPathForRole } from "../auth/authPaths.js";
 import AuthShell from "../components/AuthShell.jsx";
+import PasswordField from "../components/PasswordField.jsx";
 import { useSubmitRipple } from "../hooks/useSubmitRipple.js";
 
 const MIN_LEN = 8;
@@ -118,34 +119,26 @@ export default function ResetPasswordPage() {
             ) : null}
 
             <form className="auth-form" onSubmit={onSubmit} noValidate>
-              <label className="field">
-                <span className="field__label">Новый пароль</span>
-                <input
-                  type="password"
-                  name="password"
-                  autoComplete="new-password"
-                  required
-                  minLength={MIN_LEN}
-                  placeholder="Не короче 8 символов"
-                  className="field__input"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </label>
-              <label className="field">
-                <span className="field__label">Повторите пароль</span>
-                <input
-                  type="password"
-                  name="confirm"
-                  autoComplete="new-password"
-                  required
-                  minLength={MIN_LEN}
-                  placeholder="••••••••"
-                  className="field__input"
-                  value={confirm}
-                  onChange={(e) => setConfirm(e.target.value)}
-                />
-              </label>
+              <PasswordField
+                label="Новый пароль"
+                name="password"
+                autoComplete="new-password"
+                required
+                minLength={MIN_LEN}
+                placeholder="Не короче 8 символов"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <PasswordField
+                label="Повторите пароль"
+                name="confirm"
+                autoComplete="new-password"
+                required
+                minLength={MIN_LEN}
+                placeholder="••••••••"
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+              />
 
               <button type="submit" className={`btn btn--primary${rippling ? " is-rippling" : ""}`}>
                 <span className="btn__shine" aria-hidden="true" />

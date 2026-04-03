@@ -363,6 +363,50 @@ body {
   box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
+.field--password .field__label {
+  cursor: default;
+}
+
+.field__password-wrap {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+}
+
+.field__input--password {
+  padding-right: 2.85rem;
+}
+
+.field__password-toggle {
+  position: absolute;
+  right: 0.4rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.35rem;
+  height: 2.35rem;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(244, 246, 251, 0.65);
+  cursor: pointer;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+
+.field__password-toggle:hover {
+  color: rgba(0, 242, 255, 0.9);
+  background: rgba(0, 242, 255, 0.1);
+}
+
+.field__password-toggle:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
 .form-row {
   display: flex;
   flex-wrap: wrap;

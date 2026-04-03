@@ -4,6 +4,7 @@ import * as adminUniversityUsersApi from "../../api/adminUniversityUsersApi.js";
 import { ROLES } from "../../auth/authPaths.js";
 import { useAuth } from "../../auth/AuthContext.jsx";
 import CabinetShell from "../../components/CabinetShell.jsx";
+import PasswordField from "../../components/PasswordField.jsx";
 import "./cabinet.css";
 
 const VUZ_ROLES = [
@@ -117,17 +118,15 @@ export default function AdminCabinetPage() {
                 ))}
               </select>
             </label>
-            <label className="cabinet-field admin-user-form__full">
-              <span className="cabinet-field__label">Временный пароль</span>
-              <input
-                className="cabinet-field__input"
-                name="temporaryPassword"
-                type="password"
-                required
-                placeholder="Будет отправлен на Kotlin-бэкенд"
-                autoComplete="new-password"
-              />
-            </label>
+            <PasswordField
+              variant="cabinet"
+              className="admin-user-form__full"
+              label="Временный пароль"
+              name="temporaryPassword"
+              required
+              placeholder="Будет отправлен на Kotlin-бэкенд"
+              autoComplete="new-password"
+            />
           </div>
           <div className="cabinet-actions" style={{ marginTop: "1rem" }}>
             <button type="submit" className="btn btn--primary" disabled={submitting}>

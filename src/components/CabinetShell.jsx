@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import * as authApi from "../api/authApi.js";
+import { ROLE_LABELS } from "../auth/authPaths.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import logoSvg from "../assets/logo.svg";
 
@@ -33,9 +34,19 @@ export default function CabinetShell({ badge, title, subtitle, children }) {
         </Link>
 
         <div className="cabinet-user" aria-live="polite">
-          <span className="cabinet-user__login" title={user?.login}>
-            {user?.login}
-          </span>
+          <div className="cabinet-user__info">
+            {user?.lastName || user?.firstName ? (
+              <span className="cabinet-user__name">
+                {[user.lastName, user.firstName].filter(Boolean).join(" ")}
+              </span>
+            ) : null}
+            <span className="cabinet-user__email" title={user?.login}>
+              {user?.login}
+            </span>
+            {user?.role && ROLE_LABELS[user.role] ? (
+              <span className="cabinet-user__role">{ROLE_LABELS[user.role]}</span>
+            ) : null}
+          </div>
           <button type="button" className="cabinet-user__logout" onClick={handleLogout}>
             Выйти
           </button>

@@ -6,6 +6,8 @@ import { useAuth } from "../auth/AuthContext.jsx";
 import { ROLES, cabinetPathForRole } from "../auth/authPaths.js";
 import { validateDemoCredentials } from "../auth/demoAccounts.js";
 import AuthShell from "../components/AuthShell.jsx";
+import PasswordField from "../components/PasswordField.jsx";
+import { resolveSessionProfile } from "../auth/sessionProfile.js";
 import { useSubmitRipple } from "../hooks/useSubmitRipple.js";
 
 export default function AdminLoginPage() {
@@ -44,7 +46,8 @@ export default function AdminLoginPage() {
     }
     triggerRipple();
     const persist = fd.get("remember") === "on";
-    signIn({ role: resolvedRole, login, persist });
+    const { firstName, lastName } = resolveSessionProfile(login);
+    signIn({ role: resolvedRole, login, persist, firstName, lastName });
     navigate(cabinetPathForRole(resolvedRole));
   };
 
@@ -83,17 +86,13 @@ export default function AdminLoginPage() {
               className="field__input"
             />
           </label>
-          <label className="field">
-            <span className="field__label">Пароль</span>
-            <input
-              type="password"
-              name="password"
-              autoComplete="current-password"
-              required
-              placeholder="••••••••"
-              className="field__input"
-            />
-          </label>
+          <PasswordField
+            label="Пароль"
+            name="password"
+            autoComplete="current-password"
+            required
+            placeholder="••••••••"
+          />
 
           <div className="form-row">
             <label className="checkbox">

@@ -7,7 +7,12 @@ function parseUser(raw) {
   try {
     const data = JSON.parse(raw);
     if (!data?.role || typeof data.login !== "string") return null;
-    return { role: data.role, login: data.login.trim() };
+    return {
+      role: data.role,
+      login: data.login.trim(),
+      firstName: typeof data.firstName === "string" ? data.firstName.trim() : "",
+      lastName: typeof data.lastName === "string" ? data.lastName.trim() : "",
+    };
   } catch {
     return null;
   }
@@ -36,8 +41,13 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(readStored);
 
-  const signIn = useCallback(({ role, login, persist = true }) => {
-    const next = { role, login: String(login).trim() };
+  const signIn = useCallback(({ role, login, persist = true, firstName = "", lastName = "" }) => {
+    const next = {
+      role,
+      login: String(login).trim(),
+      firstName: String(firstName ?? "").trim(),
+      lastName: String(lastName ?? "").trim(),
+    };
     const payload = JSON.stringify(next);
     setUser(next);
     if (persist) {
