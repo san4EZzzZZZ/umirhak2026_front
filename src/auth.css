@@ -140,6 +140,12 @@ body {
   filter: drop-shadow(0 0 18px rgba(0, 242, 255, 0.15));
 }
 
+.brand__mark .brand__logo {
+  display: block;
+  height: 2rem;
+  width: auto;
+}
+
 .brand__text {
   display: flex;
   flex-direction: column;
