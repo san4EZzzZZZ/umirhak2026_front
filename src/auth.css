@@ -550,6 +550,17 @@ body {
   border: 1px solid rgba(224, 17, 95, 0.35);
 }
 
+.auth-success {
+  margin: 0 0 0.85rem;
+  padding: 0.6rem 0.85rem;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: #b8f5e8;
+  background: rgba(0, 242, 255, 0.08);
+  border: 1px solid rgba(0, 242, 255, 0.28);
+}
+
 .auth-demo {
   margin-top: 1.25rem;
   padding: 0.9rem 1rem;

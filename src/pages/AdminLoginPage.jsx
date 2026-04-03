@@ -92,6 +92,9 @@ export default function AdminLoginPage() {
               <span className="checkbox__box" aria-hidden="true" />
               <span>Запомнить устройство (сохранять после закрытия браузера)</span>
             </label>
+            <Link to="/login/admin/forgot-password" className="link-muted">
+              Забыли пароль?
+            </Link>
           </div>
 
           <button type="submit" className={`btn btn--primary${rippling ? " is-rippling" : ""}`}>

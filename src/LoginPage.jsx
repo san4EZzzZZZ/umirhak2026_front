@@ -160,9 +160,9 @@ export default function LoginPage() {
               <span className="checkbox__box" aria-hidden="true" />
               <span>Запомнить устройство (сохранять после закрытия браузера)</span>
             </label>
-            <a href="#" className="link-muted">
+            <Link to={`/login/forgot-password?role=${activeRole}`} className="link-muted">
               Забыли пароль?
-            </a>
+            </Link>
           </div>
 
           <button type="submit" className={`btn btn--primary${rippling ? " is-rippling" : ""}`}>

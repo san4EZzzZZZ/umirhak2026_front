@@ -42,3 +42,27 @@ export async function refreshSession() {
   // Kotlin: POST /api/v1/auth/refresh
   return Promise.resolve({});
 }
+
+/**
+ * Запрос письма со ссылкой на сброс пароля.
+ * @param {{ role: string, email: string }} payload
+ */
+export async function requestPasswordReset(payload) {
+  // Kotlin: POST /api/v1/auth/forgot-password — { role, email }
+  void API_BASE_URL;
+  void kotlinApiHeaders;
+  void payload;
+  return Promise.resolve({});
+}
+
+/**
+ * Установка нового пароля по одноразовому токену из письма.
+ * @param {{ token: string, newPassword: string }} payload
+ */
+export async function confirmPasswordReset(payload) {
+  // Kotlin: POST /api/v1/auth/reset-password — { token, newPassword }
+  void API_BASE_URL;
+  void kotlinApiHeaders;
+  void payload;
+  return Promise.resolve({});
+}

@@ -10,6 +10,10 @@ import StudentCabinetPage from "./pages/cabinets/StudentCabinetPage.jsx";
 import UniversityCabinetPage from "./pages/cabinets/UniversityCabinetPage.jsx";
 import AdminCabinetPage from "./pages/cabinets/AdminCabinetPage.jsx";
 import AdminLoginPage from "./pages/AdminLoginPage.jsx";
+import AdminForgotPasswordPage from "./pages/AdminForgotPasswordPage.jsx";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage.jsx";
+import ResetPasswordPage from "./pages/ResetPasswordPage.jsx";
+import UniversityForgotPasswordPage from "./pages/UniversityForgotPasswordPage.jsx";
 
 export default function App() {
   return (
@@ -18,8 +22,12 @@ export default function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/login/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/login/reset-password" element={<ResetPasswordPage />} />
           <Route path="/login/vuz" element={<UniversityLoginPage />} />
+          <Route path="/login/vuz/forgot-password" element={<UniversityForgotPasswordPage />} />
           <Route path="/login/admin" element={<AdminLoginPage />} />
+          <Route path="/login/admin/forgot-password" element={<AdminForgotPasswordPage />} />
           <Route
             path="/cabinet/vuz"
             element={
