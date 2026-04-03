@@ -9,6 +9,7 @@ import EmployerCabinetPage from "./pages/cabinets/EmployerCabinetPage.jsx";
 import StudentCabinetPage from "./pages/cabinets/StudentCabinetPage.jsx";
 import UniversityCabinetPage from "./pages/cabinets/UniversityCabinetPage.jsx";
 import AdminCabinetPage from "./pages/cabinets/AdminCabinetPage.jsx";
+import SuperAdminCabinetPage from "./pages/cabinets/SuperAdminCabinetPage.jsx";
 import AdminLoginPage from "./pages/AdminLoginPage.jsx";
 import AdminForgotPasswordPage from "./pages/AdminForgotPasswordPage.jsx";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage.jsx";
@@ -55,8 +56,16 @@ export default function App() {
           <Route
             path="/cabinet/admin"
             element={
-              <ProtectedRoute role={ROLES.admin}>
+              <ProtectedRoute roles={[ROLES.admin, ROLES.superadmin]}>
                 <AdminCabinetPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/cabinet/superadmin"
+            element={
+              <ProtectedRoute role={ROLES.superadmin}>
+                <SuperAdminCabinetPage />
               </ProtectedRoute>
             }
           />

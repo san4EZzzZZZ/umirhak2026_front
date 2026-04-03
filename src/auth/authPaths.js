@@ -3,6 +3,7 @@ export const ROLES = {
   student: "student",
   employer: "employer",
   admin: "admin",
+  superadmin: "superadmin",
 };
 
 export const CABINET_PATHS = {
@@ -10,6 +11,7 @@ export const CABINET_PATHS = {
   [ROLES.student]: "/cabinet/student",
   [ROLES.employer]: "/cabinet/hr",
   [ROLES.admin]: "/cabinet/admin",
+  [ROLES.superadmin]: "/cabinet/superadmin",
 };
 
 export function cabinetPathForRole(role) {
@@ -18,6 +20,6 @@ export function cabinetPathForRole(role) {
 
 export function loginPathForRole(role) {
   if (role === ROLES.university) return "/login/vuz";
-  if (role === ROLES.admin) return "/login/admin";
+  if (role === ROLES.admin || role === ROLES.superadmin) return "/login/admin";
   return "/login";
 }

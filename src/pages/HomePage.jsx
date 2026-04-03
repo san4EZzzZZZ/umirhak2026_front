@@ -2,77 +2,105 @@ import { Link } from "react-router-dom";
 import AuthShell from "../components/AuthShell.jsx";
 import "./home.css";
 
-const PROBLEMS = [
+const STATS = [
+  { value: "24/7", label: "доступ к проверке статуса диплома" },
+  { value: "QR + TTL", label: "одноразовые ссылки с ограниченным сроком" },
+  { value: "ЕП + аудит", label: "подпись данных и журнал событий" },
+];
+
+const BENEFITS = [
   {
-    title: "Поддельные дипломы",
-    text: "На рынке встречаются сфальсифицированные документы об образовании — без единого источника правды проверка затруднена.",
+    icon: "shield",
+    title: "Доверие к документу",
+    text: "Сведения идут из реестра вуза, а не из скана бумаги: меньше споров при найме и госзакупках.",
   },
   {
-    title: "Разрозненные данные",
-    text: "Работодателям и госорганам сложно быстро подтвердить выпуск: реестры не связаны, нет стандартизированной выдачи подтверждения.",
+    icon: "bolt",
+    title: "Секунды вместо недель",
+    text: "Работодатель проверяет QR или запрос по реестру без писем в приёмную комиссию и долгих ожиданий.",
   },
   {
-    title: "Риски для репутации",
-    text: "Ошибочный или отсутствующий контроль ведёт к найму без нужной квалификации и репутационным потерям.",
+    icon: "lock",
+    title: "Контроль доступа",
+    text: "Срок действия токена, отзыв и разграничение ролей — выпускник сам решает, когда открыть данные.",
+  },
+  {
+    icon: "layers",
+    title: "Единая картина",
+    text: "Один интерфейс для загрузки реестров, подписания пакетов и мониторинга обращений на проверку.",
+  },
+  {
+    icon: "chart",
+    title: "Готовность к нагрузке",
+    text: "Сервис рассчитан на пики запросов в сезон найма и массовые выпуски без «падений» в пике.",
+  },
+  {
+    icon: "fingerprint",
+    title: "Прослеживаемость",
+    text: "История изменений и технические метки помогают разбирать инциденты и отвечать регулятору.",
   },
 ];
 
-const ROLES = [
+const STEPS = [
+  {
+    title: "Вуз публикует реестр",
+    text: "Загрузка и подписание данных о выпускниках, актуализация при необходимости.",
+  },
+  {
+    title: "Выпускник получает доступ",
+    text: "Личный кабинет: просмотр записи и выдача ссылки или QR для проверки.",
+  },
+  {
+    title: "Проверка в один шаг",
+    text: "HR или сервис сканирует код или ищет по реестру — мгновенный статус подлинности.",
+  },
+  {
+    title: "Контроль и отзыв",
+    text: "Истёк срок токена или нужен отзыв — статус обновляется, повторные проверки видят актуальное состояние.",
+  },
+];
+
+const AUDIENCE = [
   {
     id: "vuz",
-    title: "ВУЗ",
-    desc: "Загрузка реестров выпускников, подписание данных электронной подписью, актуализация сведений.",
+    title: "Вузам и колледжам",
+    desc: "Ведение реестра выпускников, ЭП, выгрузки и сопровождение данных без лишней бюрократии.",
     to: "/login/vuz",
-    cta: "Вход для ВУЗа",
+    cta: "Кабинет образовательной организации",
     accent: "purple",
   },
   {
-    id: "student",
-    title: "Студент / выпускник",
-    desc: "Просмотр записи о дипломе, выпуск одноразовой ссылки или QR-кода для проверки работодателем.",
+    id: "graduate",
+    title: "Студентам и выпускникам",
+    desc: "Понятный статус диплома и безопасная передача подтверждения работодателю — вы сами управляете доступом.",
     to: "/login",
-    cta: "Вход для студента",
+    cta: "Войти как выпускник",
     accent: "cyan",
   },
   {
     id: "hr",
-    title: "HR / работодатель",
-    desc: "Поиск по реестру, сканирование QR и получение статуса подлинности с учётом срока действия и отзыва.",
+    title: "HR и работодателям",
+    desc: "Поиск по реестру, проверка QR и фиксация результата — меньше риска ошибочного найма.",
     to: "/login",
     cta: "Портал для HR",
     accent: "magenta",
   },
 ];
 
-const CAPABILITIES = [
-  {
-    title: "QR и срок действия (TTL)",
-    text: "Выдача проверяемых токенов с ограниченным временем жизни, возможность инвалидации и отзыва.",
-  },
-  {
-    title: "Единый реестр",
-    text: "Агрегированные сведения от аккредитованных организаций с контролем целостности и подписи.",
-  },
-  {
-    title: "Масштаб и отказоустойчивость",
-    text: "Событийная архитектура, оркестрация контейнеров и ограничение нагрузки для стабильной работы под пиками запросов.",
-  },
-];
-
 export default function HomePage() {
   const nav = (
     <nav className="top-bar__nav" aria-label="Основная навигация">
-      <a href="#about" className="top-bar__nav-link">
-        О платформе
+      <a href="#benefits" className="top-bar__nav-link">
+        Преимущества
       </a>
-      <a href="#problem" className="top-bar__nav-link">
-        Задача
+      <a href="#how" className="top-bar__nav-link">
+        Как работает
       </a>
-      <a href="#roles" className="top-bar__nav-link">
-        Участники
+      <a href="#audience" className="top-bar__nav-link">
+        Для кого
       </a>
       <Link to="/login/vuz" className="top-bar__nav-link top-bar__nav-link--muted">
-        ВУЗам
+        Вузам
       </Link>
       <Link to="/login" className="top-bar__nav-cta">
         Войти
@@ -82,89 +110,112 @@ export default function HomePage() {
 
   return (
     <AuthShell nav={nav} mainClassName="main main--landing">
-      <div className="home">
-        <section className="home-hero" aria-labelledby="home-hero-title">
-          <div className="home-hero__content">
-            <p className="home-eyebrow">Платформа DIASOFT</p>
-            <h1 id="home-hero-title" className="home-hero__title">
-              Проверка дипломов в&nbsp;едином доверенном реестре
-            </h1>
-            <p className="home-hero__lead">
-              Защита от подделок для вузов, выпускников и работодателей: электронные реестры, подпись данных, QR-проверка с
-              контролем срока действия и отзыва.
-            </p>
-            <div className="home-hero__actions">
-              <Link to="/login/vuz" className="btn btn--primary home-hero__btn">
-                <span className="btn__shine" aria-hidden="true" />
-                <span className="btn__label">Кабинет ВУЗа</span>
-              </Link>
-              <Link to="/login" className="btn btn--secondary home-hero__btn">
-                <span className="btn__label">Студент или HR</span>
-              </Link>
+      <div className="landing">
+        <section className="landing-hero" aria-labelledby="landing-hero-title">
+          <div className="landing-hero__grid">
+            <div className="landing-hero__copy">
+              <p className="landing-hero__badge">Единый реестр дипломов</p>
+              <h1 id="landing-hero-title" className="landing-hero__title">
+                Проверяйте образование быстро — без сомнений и лишних писем
+              </h1>
+              <p className="landing-hero__lead">
+                Платформа для вузов, выпускников и работодателей: подписанные реестры, QR и ограниченные по времени ссылки,
+                прозрачный статус документа там, где принимаются кадровые решения.
+              </p>
+              <div className="landing-hero__actions">
+                <Link to="/login/vuz" className="btn btn--primary landing-hero__btn">
+                  <span className="btn__shine" aria-hidden="true" />
+                  <span className="btn__label">Подключить вуз</span>
+                </Link>
+                <Link to="/login" className="btn btn--secondary landing-hero__btn">
+                  <span className="btn__label">Выпускник или HR</span>
+                </Link>
+              </div>
+              <ul className="landing-hero__chips" aria-label="Ключевые возможности">
+                <li>Электронная подпись пакетов</li>
+                <li>Проверка по QR</li>
+                <li>Отзыв и срок действия</li>
+              </ul>
             </div>
-          </div>
-          <div className="home-hero__panel" aria-hidden="true">
-            <div className="home-hero__qr">
-              <span className="home-hero__qr-label">Проверка по QR</span>
-              <div className="home-hero__qr-grid" />
-              <span className="home-hero__qr-meta">TTL · отзыв · аудит</span>
+            <div className="landing-hero__visual" aria-hidden="true">
+              <div className="landing-hero__glow" />
+              <div className="landing-hero__card">
+                <p className="landing-hero__card-label">Проверка</p>
+                <div className="landing-hero__card-qr" />
+                <div className="landing-hero__card-row">
+                  <span className="landing-hero__pill landing-hero__pill--ok">Подлинность подтверждена</span>
+                  <span className="landing-hero__pill">Реестр ВУЗа</span>
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
-        <section id="about" className="home-section" aria-labelledby="about-title">
-          <h2 id="about-title" className="home-section__title">
-            Что делает платформа
-          </h2>
-          <p className="home-section__intro">
-            Решение закрывает пробел между выпуском диплома и быстрой доверенной верификацией: данные приходят из первоисточника
-            (вуза), фиксируются в реестре и доступны для проверки в цифровом виде.
-          </p>
-          <ul className="home-pillars">
-            {CAPABILITIES.map((item) => (
-              <li key={item.title} className="home-pillar">
-                <h3 className="home-pillar__title">{item.title}</h3>
-                <p className="home-pillar__text">{item.text}</p>
+        <section className="landing-stats" aria-label="Возможности в цифрах">
+          <ul className="landing-stats__list">
+            {STATS.map((s) => (
+              <li key={s.label} className="landing-stats__item">
+                <span className="landing-stats__value">{s.value}</span>
+                <span className="landing-stats__label">{s.label}</span>
               </li>
             ))}
           </ul>
         </section>
 
-        <section id="problem" className="home-section home-section--tight" aria-labelledby="problem-title">
-          <h2 id="problem-title" className="home-section__title">
-            Проблематика
-          </h2>
-          <p className="home-section__intro">
-            Кейс из практики: рост числа сомнительных документов и отсутствие единой точки проверки для рынка труда и государства.
-          </p>
-          <ul className="home-problems">
-            {PROBLEMS.map((p) => (
-              <li key={p.title} className="home-problem">
-                <span className="home-problem__dot" aria-hidden="true" />
-                <div>
-                  <h3 className="home-problem__title">{p.title}</h3>
-                  <p className="home-problem__text">{p.text}</p>
+        <section id="benefits" className="landing-section landing-section--benefits">
+          <header className="landing-section__head">
+            <h2 className="landing-section__title">Почему это удобно всем сторонам</h2>
+            <p className="landing-section__subtitle">
+              Практические свойства, которые экономят время юридическим и HR-отделам и снимают напряжение у выпускников.
+            </p>
+          </header>
+          <ul className="landing-benefits">
+            {BENEFITS.map((b) => (
+              <li key={b.title} className="landing-benefit">
+                <span className={`landing-benefit__icon landing-benefit__icon--${b.icon}`} aria-hidden="true" />
+                <h3 className="landing-benefit__title">{b.title}</h3>
+                <p className="landing-benefit__text">{b.text}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section id="how" className="landing-section landing-section--how">
+          <header className="landing-section__head">
+            <h2 className="landing-section__title">Как это работает</h2>
+            <p className="landing-section__subtitle">
+              Короткая цепочка от данных вуза до ответа для работодателя — без ручной пересылки сканов.
+            </p>
+          </header>
+          <ol className="landing-steps">
+            {STEPS.map((step, i) => (
+              <li key={step.title} className="landing-step">
+                <span className="landing-step__num" aria-hidden="true">
+                  {i + 1}
+                </span>
+                <div className="landing-step__body">
+                  <h3 className="landing-step__title">{step.title}</h3>
+                  <p className="landing-step__text">{step.text}</p>
                 </div>
               </li>
             ))}
-          </ul>
+          </ol>
         </section>
 
-        <section id="roles" className="home-section" aria-labelledby="roles-title">
-          <h2 id="roles-title" className="home-section__title">
-            Участники и личные кабинеты
-          </h2>
-          <p className="home-section__intro">
-            Три роли из технического задания: отдельные сценарии входа и полномочий — вуз загружает и подписывает данные, студент
-            выдаёт подтверждение, работодатель проверяет реестр и QR.
-          </p>
-          <ul className="home-roles">
-            {ROLES.map((role) => (
-              <li key={role.id} className={`home-role home-role--${role.accent}`}>
-                <h3 className="home-role__title">{role.title}</h3>
-                <p className="home-role__desc">{role.desc}</p>
-                <Link to={role.to} className="home-role__link">
-                  {role.cta}
+        <section id="audience" className="landing-section landing-section--audience">
+          <header className="landing-section__head">
+            <h2 className="landing-section__title">Три входа — одна экосистема</h2>
+            <p className="landing-section__subtitle">
+              Разные роли, разные сценарии, но общий реестр и единые правила безопасности.
+            </p>
+          </header>
+          <ul className="landing-audience">
+            {AUDIENCE.map((a) => (
+              <li key={a.id} className={`landing-card landing-card--${a.accent}`}>
+                <h3 className="landing-card__title">{a.title}</h3>
+                <p className="landing-card__desc">{a.desc}</p>
+                <Link to={a.to} className="landing-card__link">
+                  {a.cta}
                   <span aria-hidden="true"> →</span>
                 </Link>
               </li>
@@ -172,17 +223,36 @@ export default function HomePage() {
           </ul>
         </section>
 
-        <footer className="home-footer">
-          <p className="home-footer__text">
-            <strong>DIASOFT</strong> — IT-решения для финансового сектора и цифровизации. Платформа построена с учётом требований к
-            безопасности, производительности и сопровождению.
+        <section className="landing-cta" aria-labelledby="landing-cta-title">
+          <div className="landing-cta__inner">
+            <h2 id="landing-cta-title" className="landing-cta__title">
+              Готовы сократить путь от диплома до проверки?
+            </h2>
+            <p className="landing-cta__text">
+              Выберите роль и войдите в демо-кабинет — интерфейс можно адаптировать под процессы вашей организации.
+            </p>
+            <div className="landing-cta__actions">
+              <Link to="/login/vuz" className="btn btn--primary landing-cta__btn">
+                <span className="btn__shine" aria-hidden="true" />
+                <span className="btn__label">Начать с вуза</span>
+              </Link>
+              <Link to="/login" className="btn btn--secondary landing-cta__btn">
+                <span className="btn__label">Войти как студент или HR</span>
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        <footer className="landing-footer">
+          <p className="landing-footer__brand">
+            <strong>DIASOFT</strong> — цифровые сервисы с упором на безопасность, масштаб и сопровождение.
           </p>
-          <p className="home-footer__admin-wrap">
-            <Link to="/login/admin" className="home-footer__admin">
-              Вход для администратора платформы
+          <p className="landing-footer__admin-wrap">
+            <Link to="/login/admin" className="landing-footer__admin">
+              Вход администратора платформы
             </Link>
           </p>
-          <p className="home-footer__legal">Демонстрационный интерфейс кейса · 2026</p>
+          <p className="landing-footer__note">Демонстрационный стенд · 2026</p>
         </footer>
       </div>
     </AuthShell>

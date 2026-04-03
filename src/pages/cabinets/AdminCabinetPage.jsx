@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import * as adminUniversityUsersApi from "../../api/adminUniversityUsersApi.js";
+import { ROLES } from "../../auth/authPaths.js";
+import { useAuth } from "../../auth/AuthContext.jsx";
 import CabinetShell from "../../components/CabinetShell.jsx";
 import "./cabinet.css";
 
@@ -9,6 +12,7 @@ const VUZ_ROLES = [
 ];
 
 export default function AdminCabinetPage() {
+  const { user } = useAuth();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -71,6 +75,14 @@ export default function AdminCabinetPage() {
       title="Пользователи ВУЗов"
       subtitle="Создание учётных записей для регистраторов и подписантов. Данные ниже синхронизируются с Kotlin-бэкендом после подключения REST (см. src/api/adminUniversityUsersApi.js)."
     >
+      {user?.role === ROLES.superadmin ? (
+        <p className="cabinet-card__hint" style={{ marginBottom: "1.25rem" }}>
+          <Link to="/cabinet/superadmin" className="link-muted" style={{ fontWeight: 600 }}>
+            Администраторы платформы →
+          </Link>
+        </p>
+      ) : null}
+
       <div className="cabinet-card admin-form-card">
         <h2 className="cabinet-card__title">Добавить пользователя ВУЗа</h2>
         <p className="cabinet-card__hint" style={{ marginBottom: "1rem" }}>

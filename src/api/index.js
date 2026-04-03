@@ -6,6 +6,7 @@
 export * from "./config.js";
 export * from "./authApi.js";
 export * from "./adminUniversityUsersApi.js";
+export * from "./adminPlatformAdminsApi.js";
 export * from "./universityRegistryApi.js";
 export * from "./studentDiplomaApi.js";
 export * from "./employerRegistryApi.js";

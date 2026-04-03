@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import * as authApi from "../api/authApi.js";
+import { validatePlatformAdminLogin } from "../api/adminPlatformAdminsApi.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { ROLES, cabinetPathForRole } from "../auth/authPaths.js";
 import { validateDemoCredentials } from "../auth/demoAccounts.js";
@@ -24,20 +25,27 @@ export default function AdminLoginPage() {
     const login = fd.get("login")?.toString().trim();
     const password = fd.get("password")?.toString() ?? "";
     if (!login) return;
-    if (!validateDemoCredentials(ROLES.admin, login, password)) {
+
+    let resolvedRole = null;
+    if (validateDemoCredentials(ROLES.superadmin, login, password)) {
+      resolvedRole = ROLES.superadmin;
+    } else if (validatePlatformAdminLogin(login, password)) {
+      resolvedRole = ROLES.admin;
+    } else {
       setAuthError("Неверный логин или пароль.");
       return;
     }
+
     try {
-      await authApi.login({ role: ROLES.admin, login, password });
+      await authApi.login({ role: resolvedRole, login, password });
     } catch {
       setAuthError("Не удалось связаться с сервером (заглушка API).");
       return;
     }
     triggerRipple();
     const persist = fd.get("remember") === "on";
-    signIn({ role: ROLES.admin, login, persist });
-    navigate(cabinetPathForRole(ROLES.admin));
+    signIn({ role: resolvedRole, login, persist });
+    navigate(cabinetPathForRole(resolvedRole));
   };
 
   return (
@@ -51,7 +59,8 @@ export default function AdminLoginPage() {
           Вход в админ-панель
         </h1>
         <p className="auth-subtitle">
-          Управление учётными записями пользователей ВУЗов. Доступ только для операторов платформы DIASOFT.
+          Обычные администраторы ведут пользователей ВУЗов. Суперпользователь дополнительно управляет списком
+          администраторов — те же учётные данные вводятся на этой странице.
         </p>
 
         {authError ? (
@@ -103,8 +112,27 @@ export default function AdminLoginPage() {
           </button>
         </form>
 
-        <div className="auth-demo" aria-label="Демо-логин администратора">
-          <p className="auth-demo__title">Демо-доступ администратора</p>
+        <div className="auth-demo" aria-label="Демо-доступы админ-панели">
+          <p className="auth-demo__title">Суперпользователь (управление администраторами)</p>
+          <table className="auth-demo__table">
+            <tbody>
+              <tr>
+                <th scope="row">Логин</th>
+                <td>
+                  <code className="auth-demo__code">super@demo.diasoft</code>
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">Пароль</th>
+                <td>
+                  <code className="auth-demo__code">SuperDemo2026</code>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p className="auth-demo__title" style={{ marginTop: "1rem" }}>
+            Администратор (только пользователи ВУЗов)
+          </p>
           <table className="auth-demo__table">
             <tbody>
               <tr>
