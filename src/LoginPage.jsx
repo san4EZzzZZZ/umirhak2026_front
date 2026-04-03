@@ -1,6 +1,10 @@
-import { useCallback, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "./auth/AuthContext.jsx";
+import { cabinetPathForRole } from "./auth/authPaths.js";
+import { validateDemoCredentials } from "./auth/demoAccounts.js";
 import AuthShell from "./components/AuthShell.jsx";
+import DemoCredentialsPanel from "./components/DemoCredentialsPanel.jsx";
 import { useSubmitRipple } from "./hooks/useSubmitRipple.js";
 
 const ROLES = [
@@ -15,8 +19,19 @@ const ROLE_COPY = {
 
 export default function LoginPage() {
   const [activeRole, setActiveRole] = useState("student");
+  const [authError, setAuthError] = useState(null);
   const { rippling, triggerRipple } = useSubmitRipple();
+  const { user, signIn } = useAuth();
+  const navigate = useNavigate();
   const tabRefs = useRef([]);
+
+  useEffect(() => {
+    if (user) navigate(cabinetPathForRole(user.role), { replace: true });
+  }, [user, navigate]);
+
+  useEffect(() => {
+    setAuthError(null);
+  }, [activeRole]);
 
   const focusTab = useCallback((index) => {
     tabRefs.current[index]?.focus();
@@ -38,7 +53,19 @@ export default function LoginPage() {
 
   const onSubmit = (e) => {
     e.preventDefault();
+    setAuthError(null);
+    const fd = new FormData(e.currentTarget);
+    const login = fd.get("login")?.toString().trim();
+    const password = fd.get("password")?.toString() ?? "";
+    if (!login) return;
+    if (!validateDemoCredentials(activeRole, login, password)) {
+      setAuthError("Неверный логин или пароль. Используйте демо-учётные данные из таблицы ниже.");
+      return;
+    }
     triggerRipple();
+    const persist = fd.get("remember") === "on";
+    signIn({ role: activeRole, login, persist });
+    navigate(cabinetPathForRole(activeRole));
   };
 
   return (
@@ -87,6 +114,12 @@ export default function LoginPage() {
           {ROLE_COPY[activeRole]}
         </p>
 
+        {authError ? (
+          <p className="auth-error" role="alert">
+            {authError}
+          </p>
+        ) : null}
+
         <form className="auth-form" onSubmit={onSubmit} noValidate>
           <input type="hidden" name="role" value={activeRole} />
 
@@ -115,9 +148,9 @@ export default function LoginPage() {
 
           <div className="form-row">
             <label className="checkbox">
-              <input type="checkbox" name="remember" />
+              <input type="checkbox" name="remember" defaultChecked />
               <span className="checkbox__box" aria-hidden="true" />
-              <span>Запомнить устройство</span>
+              <span>Запомнить устройство (сохранять после закрытия браузера)</span>
             </label>
             <a href="#" className="link-muted">
               Забыли пароль?
@@ -129,6 +162,14 @@ export default function LoginPage() {
             <span className="btn__label">Войти</span>
           </button>
         </form>
+
+        <DemoCredentialsPanel />
+
+        <p className="auth-crosslink">
+          <Link to="/" className="link-muted">
+            ← На главную
+          </Link>
+        </p>
 
         <p className="footer-note">Нет доступа? Обратитесь к администратору вашей организации.</p>
       </section>

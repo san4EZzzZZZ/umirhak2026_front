@@ -1,6 +1,15 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../auth/AuthContext.jsx";
 
-export default function AuthShell({ children, nav, mainClassName = "main" }) {
+export default function CabinetShell({ badge, title, subtitle, children }) {
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    signOut();
+    navigate("/", { replace: true });
+  };
+
   return (
     <>
       <div className="page-bg" aria-hidden="true">
@@ -10,7 +19,7 @@ export default function AuthShell({ children, nav, mainClassName = "main" }) {
         <div className="grid-overlay" />
       </div>
 
-      <header className="top-bar">
+      <header className="top-bar top-bar--cabinet">
         <Link className="brand" to="/" aria-label="DIASOFT — на главную">
           <span className="brand__mark" aria-hidden="true">
             <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -37,10 +46,27 @@ export default function AuthShell({ children, nav, mainClassName = "main" }) {
             <span className="brand__tag">всё по-настоящему</span>
           </span>
         </Link>
-        {nav ?? <p className="top-bar__hint">Проверка дипломов · единый реестр</p>}
+
+        <div className="cabinet-user" aria-live="polite">
+          <span className="cabinet-user__login" title={user?.login}>
+            {user?.login}
+          </span>
+          <button type="button" className="cabinet-user__logout" onClick={handleLogout}>
+            Выйти
+          </button>
+        </div>
       </header>
 
-      <main className={mainClassName}>{children}</main>
+      <main className="main main--cabinet">
+        <div className="cabinet">
+          <header className="cabinet__head">
+            {badge ? <p className="cabinet__badge">{badge}</p> : null}
+            <h1 className="cabinet__title">{title}</h1>
+            {subtitle ? <p className="cabinet__subtitle">{subtitle}</p> : null}
+          </header>
+          {children}
+        </div>
+      </main>
     </>
   );
 }
