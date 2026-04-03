@@ -1,5 +1,7 @@
+/** Вход студент/HR + вызов заглушки Kotlin: src/api/authApi.js */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import * as authApi from "./api/authApi.js";
 import { useAuth } from "./auth/AuthContext.jsx";
 import { cabinetPathForRole } from "./auth/authPaths.js";
 import { validateDemoCredentials } from "./auth/demoAccounts.js";
@@ -51,7 +53,7 @@ export default function LoginPage() {
     [focusTab]
   );
 
-  const onSubmit = (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
     setAuthError(null);
     const fd = new FormData(e.currentTarget);
@@ -60,6 +62,12 @@ export default function LoginPage() {
     if (!login) return;
     if (!validateDemoCredentials(activeRole, login, password)) {
       setAuthError("Неверный логин или пароль. Используйте демо-учётные данные из таблицы ниже.");
+      return;
+    }
+    try {
+      await authApi.login({ role: activeRole, login, password });
+    } catch {
+      setAuthError("Сервер авторизации недоступен. Проверьте Kotlin API (см. src/api/authApi.js).");
       return;
     }
     triggerRipple();

@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 
+/** Оболочка публичных страниц; авторизация на бэкенде — через src/api/authApi.js */
 export default function AuthShell({ children, nav, mainClassName = "main" }) {
   return (
     <>

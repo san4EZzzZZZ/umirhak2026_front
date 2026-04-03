@@ -8,6 +8,8 @@ import UniversityLoginPage from "./pages/UniversityLoginPage.jsx";
 import EmployerCabinetPage from "./pages/cabinets/EmployerCabinetPage.jsx";
 import StudentCabinetPage from "./pages/cabinets/StudentCabinetPage.jsx";
 import UniversityCabinetPage from "./pages/cabinets/UniversityCabinetPage.jsx";
+import AdminCabinetPage from "./pages/cabinets/AdminCabinetPage.jsx";
+import AdminLoginPage from "./pages/AdminLoginPage.jsx";
 
 export default function App() {
   return (
@@ -17,6 +19,7 @@ export default function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/login/vuz" element={<UniversityLoginPage />} />
+          <Route path="/login/admin" element={<AdminLoginPage />} />
           <Route
             path="/cabinet/vuz"
             element={
@@ -38,6 +41,14 @@ export default function App() {
             element={
               <ProtectedRoute role={ROLES.employer}>
                 <EmployerCabinetPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/cabinet/admin"
+            element={
+              <ProtectedRoute role={ROLES.admin}>
+                <AdminCabinetPage />
               </ProtectedRoute>
             }
           />

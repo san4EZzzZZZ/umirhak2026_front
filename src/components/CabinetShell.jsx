@@ -1,13 +1,18 @@
 import { Link, useNavigate } from "react-router-dom";
+import * as authApi from "../api/authApi.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 
 export default function CabinetShell({ badge, title, subtitle, children }) {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    signOut();
-    navigate("/", { replace: true });
+  const handleLogout = async () => {
+    try {
+      await authApi.logout();
+    } finally {
+      signOut();
+      navigate("/", { replace: true });
+    }
   };
 
   return (

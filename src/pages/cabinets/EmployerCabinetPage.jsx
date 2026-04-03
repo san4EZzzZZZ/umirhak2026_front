@@ -1,28 +1,32 @@
 import { useState } from "react";
+import * as employerRegistryApi from "../../api/employerRegistryApi.js";
 import CabinetShell from "../../components/CabinetShell.jsx";
 import "./cabinet.css";
 
-const MOCK_ROWS = [
-  { id: "1", fio: "Иванов И. И.", vuz: "Демо-университет", year: "2025", status: "Совпадение в реестре" },
-  { id: "2", fio: "Петрова А. С.", vuz: "Демо-университет", year: "2024", status: "Совпадение в реестре" },
-];
+/** Kotlin: employerRegistryApi.js */
 
 export default function EmployerCabinetPage() {
   const [query, setQuery] = useState("");
+  const [rows, setRows] = useState([]);
   const [searched, setSearched] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const onSearch = (e) => {
+  const onSearch = async (e) => {
     e.preventDefault();
+    setLoading(true);
     setSearched(true);
+    try {
+      const data = await employerRegistryApi.searchRegistry(query);
+      setRows(data);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const rows = searched
-    ? MOCK_ROWS.filter((r) => {
-        const q = query.trim().toLowerCase();
-        if (!q) return true;
-        return r.fio.toLowerCase().includes(q) || r.vuz.toLowerCase().includes(q);
-      })
-    : [];
+  const onScanStub = async () => {
+    await employerRegistryApi.verifyQrPayload("");
+    window.alert("Заглушка: Kotlin POST /api/v1/employer/verify/qr — подключите сканер и бэкенд.");
+  };
 
   return (
     <CabinetShell
@@ -47,21 +51,20 @@ export default function EmployerCabinetPage() {
                 autoComplete="off"
               />
             </div>
-            <button type="submit" className="btn btn--primary" style={{ width: "100%", marginTop: 0 }}>
+            <button type="submit" className="btn btn--primary" style={{ width: "100%", marginTop: 0 }} disabled={loading}>
               <span className="btn__shine" aria-hidden="true" />
-              <span className="btn__label">Найти</span>
+              <span className="btn__label">{loading ? "Поиск…" : "Найти"}</span>
             </button>
           </form>
         </div>
         <div className="cabinet-card">
           <h2 className="cabinet-card__title">Сканирование QR</h2>
           <p className="cabinet-card__hint" style={{ margin: 0 }}>
-            Откройте камеру устройства и наведите на QR выпускника. В демо-интерфейсе используйте поиск по ФИО; модуль сканера
-            подключается на этапе интеграции.
+            Kotlin: POST /api/v1/employer/verify/qr — передайте сырое содержимое QR. В демо кнопка вызывает только заглушку.
           </p>
           <div className="cabinet-actions" style={{ marginTop: "1rem" }}>
-            <button type="button" className="btn btn--secondary" disabled>
-              <span className="btn__label">Сканировать (скоро)</span>
+            <button type="button" className="btn btn--secondary" onClick={onScanStub}>
+              <span className="btn__label">Демо: проверка QR</span>
             </button>
           </div>
         </div>

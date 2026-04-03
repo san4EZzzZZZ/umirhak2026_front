@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
 
+/** Клиентская сессия; токены JWT после интеграции с Kotlin — см. src/api/authApi.js и kotlinApiHeaders */
 const STORAGE_KEY = "diasoft_auth";
 
 function parseUser(raw) {

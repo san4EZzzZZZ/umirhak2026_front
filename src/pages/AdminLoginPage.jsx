@@ -5,10 +5,9 @@ import { useAuth } from "../auth/AuthContext.jsx";
 import { ROLES, cabinetPathForRole } from "../auth/authPaths.js";
 import { validateDemoCredentials } from "../auth/demoAccounts.js";
 import AuthShell from "../components/AuthShell.jsx";
-import DemoCredentialsPanel from "../components/DemoCredentialsPanel.jsx";
 import { useSubmitRipple } from "../hooks/useSubmitRipple.js";
 
-export default function UniversityLoginPage() {
+export default function AdminLoginPage() {
   const [authError, setAuthError] = useState(null);
   const { rippling, triggerRipple } = useSubmitRipple();
   const { user, signIn } = useAuth();
@@ -25,35 +24,34 @@ export default function UniversityLoginPage() {
     const login = fd.get("login")?.toString().trim();
     const password = fd.get("password")?.toString() ?? "";
     if (!login) return;
-    if (!validateDemoCredentials(ROLES.university, login, password)) {
-      setAuthError("Неверный логин или пароль. Используйте строку ВУЗ из таблицы ниже.");
+    if (!validateDemoCredentials(ROLES.admin, login, password)) {
+      setAuthError("Неверный логин или пароль.");
       return;
     }
     try {
-      await authApi.login({ role: ROLES.university, login, password });
+      await authApi.login({ role: ROLES.admin, login, password });
     } catch {
-      setAuthError("Не удалось связаться с сервером (заглушка Kotlin API).");
+      setAuthError("Не удалось связаться с сервером (заглушка API).");
       return;
     }
     triggerRipple();
     const persist = fd.get("remember") === "on";
-    signIn({ role: ROLES.university, login, persist });
-    navigate(cabinetPathForRole(ROLES.university));
+    signIn({ role: ROLES.admin, login, persist });
+    navigate(cabinetPathForRole(ROLES.admin));
   };
 
   return (
     <AuthShell>
-      <section className="auth-card" aria-labelledby="auth-title-vuz">
+      <section className="auth-card" aria-labelledby="auth-title-admin">
         <div className="auth-card__glow" aria-hidden="true" />
 
-        <p className="auth-badge">Личный кабинет ВУЗа</p>
+        <p className="auth-badge">Администратор платформы</p>
 
-        <h1 id="auth-title-vuz" className="auth-title">
-          Вход для образовательной организации
+        <h1 id="auth-title-admin" className="auth-title">
+          Вход в админ-панель
         </h1>
         <p className="auth-subtitle">
-          Загрузка реестров выпускников, подписание данных и ведение учётных записей. Используйте учётные данные,
-          выданные администратором платформы.
+          Управление учётными записями пользователей ВУЗов. Доступ только для операторов платформы DIASOFT.
         </p>
 
         {authError ? (
@@ -63,16 +61,16 @@ export default function UniversityLoginPage() {
         ) : null}
 
         <form className="auth-form" onSubmit={onSubmit} noValidate>
-          <input type="hidden" name="role" value="university" />
+          <input type="hidden" name="role" value="admin" />
 
           <label className="field">
-            <span className="field__label">Email или логин ВУЗа</span>
+            <span className="field__label">Логин администратора</span>
             <input
               type="text"
               name="login"
               autoComplete="username"
               required
-              placeholder="registrar@university.ru"
+              placeholder="admin@demo.diasoft"
               className="field__input"
             />
           </label>
@@ -94,24 +92,33 @@ export default function UniversityLoginPage() {
               <span className="checkbox__box" aria-hidden="true" />
               <span>Запомнить устройство (сохранять после закрытия браузера)</span>
             </label>
-            <a href="#" className="link-muted">
-              Забыли пароль?
-            </a>
           </div>
 
           <button type="submit" className={`btn btn--primary${rippling ? " is-rippling" : ""}`}>
             <span className="btn__shine" aria-hidden="true" />
-            <span className="btn__label">Войти в кабинет ВУЗа</span>
+            <span className="btn__label">Войти в админ-панель</span>
           </button>
         </form>
 
-        <DemoCredentialsPanel />
-
-        <p className="auth-crosslink">
-          <Link to="/login" className="link-muted">
-            Студент или работодатель? Вход по другой роли
-          </Link>
-        </p>
+        <div className="auth-demo" aria-label="Демо-логин администратора">
+          <p className="auth-demo__title">Демо-доступ администратора</p>
+          <table className="auth-demo__table">
+            <tbody>
+              <tr>
+                <th scope="row">Логин</th>
+                <td>
+                  <code className="auth-demo__code">admin@demo.diasoft</code>
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">Пароль</th>
+                <td>
+                  <code className="auth-demo__code">AdminDemo2026</code>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
         <p className="auth-crosslink">
           <Link to="/" className="link-muted">
@@ -119,7 +126,7 @@ export default function UniversityLoginPage() {
           </Link>
         </p>
 
-        <p className="footer-note">Нет доступа? Обратитесь к координатору проекта или в службу поддержки DIASOFT.</p>
+        <p className="footer-note">Рабочий доступ выдаётся службой безопасности платформы.</p>
       </section>
     </AuthShell>
   );

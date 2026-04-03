@@ -177,6 +177,11 @@ export default function HomePage() {
             <strong>DIASOFT</strong> — IT-решения для финансового сектора и цифровизации. Платформа построена с учётом требований к
             безопасности, производительности и сопровождению.
           </p>
+          <p className="home-footer__admin-wrap">
+            <Link to="/login/admin" className="home-footer__admin">
+              Вход для администратора платформы
+            </Link>
+          </p>
           <p className="home-footer__legal">Демонстрационный интерфейс кейса · 2026</p>
         </footer>
       </div>

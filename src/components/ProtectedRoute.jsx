@@ -2,6 +2,8 @@ import { Navigate, useLocation } from "react-router-dom";
 import { cabinetPathForRole, loginPathForRole } from "../auth/authPaths.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 
+/** Защита маршрутов до появления guard на Kotlin (роли из JWT / session на бэкенде) */
+
 export default function ProtectedRoute({ role, children }) {
   const { user } = useAuth();
   const location = useLocation();

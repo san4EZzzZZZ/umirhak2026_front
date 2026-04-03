@@ -15,6 +15,10 @@ export const DEMO_ACCOUNTS = {
     login: "hr@demo.diasoft",
     password: "HrDemo2026",
   },
+  admin: {
+    login: "admin@demo.diasoft",
+    password: "AdminDemo2026",
+  },
 };
 
 export function validateDemoCredentials(role, login, password) {
