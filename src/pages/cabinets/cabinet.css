@@ -128,6 +128,10 @@
   color: rgba(244, 246, 251, 0.95);
 }
 
+.cabinet-section-title--balanced {
+  margin-bottom: 1.75rem;
+}
+
 .cabinet-section-lead {
   margin: 0;
   max-width: 52rem;

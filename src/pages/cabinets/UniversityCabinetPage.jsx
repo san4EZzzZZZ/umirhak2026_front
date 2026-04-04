@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import * as universityRegistryApi from "../../api/universityRegistryApi.js";
 import { parseDiplomaImportFile } from "../../utils/parseDiplomaImport.js";
@@ -11,30 +11,12 @@ export default function UniversityCabinetPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [capFlash, setCapFlash] = useState(null);
-  const [stats, setStats] = useState({ pendingSignature: "—", inRegistry: "—" });
-  const [diplomas, setDiplomas] = useState([]);
   const [busy, setBusy] = useState(false);
   const [diplomaFormError, setDiplomaFormError] = useState(null);
   const [bulkPreview, setBulkPreview] = useState({ rows: [], errors: [] });
   const [bulkMessage, setBulkMessage] = useState(null);
   const [annulDiplomaNumber, setAnnulDiplomaNumber] = useState("");
   const [annulFeedback, setAnnulFeedback] = useState(null);
-
-  const load = useCallback(async () => {
-    const [s, dips] = await Promise.all([
-      universityRegistryApi.getRegistryDashboardStats(),
-      universityRegistryApi.listDiplomaRecords(),
-    ]);
-    setStats({
-      pendingSignature: String(s.pendingSignature),
-      inRegistry: String(s.inRegistry),
-    });
-    setDiplomas(dips);
-  }, []);
-
-  useEffect(() => {
-    load();
-  }, [load]);
 
   useEffect(() => {
     if (location.state?.capSignedOk) {
@@ -117,7 +99,6 @@ export default function UniversityCabinetPage() {
       } else {
         setAnnulFeedback({ type: "ok", text: `Диплом «${n}» аннулирован.` });
         setAnnulDiplomaNumber("");
-        await load();
       }
     } catch {
       setAnnulFeedback({ type: "err", text: "Не удалось выполнить операцию." });
@@ -134,20 +115,10 @@ export default function UniversityCabinetPage() {
       const { added } = await universityRegistryApi.addDiplomaRecordsBulk(bulkPreview.rows);
       setBulkPreview({ rows: [], errors: [] });
       setBulkMessage(`Импортировано записей: ${added}`);
-      await load();
     } catch {
       setBulkMessage("Ошибка импорта.");
     } finally {
       setBusy(false);
-    }
-  };
-
-  const fmtDate = (iso) => {
-    try {
-      const d = new Date(iso);
-      return d.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" });
-    } catch {
-      return iso;
     }
   };
 
@@ -160,78 +131,11 @@ export default function UniversityCabinetPage() {
       {capFlash ? (
         <p className="cabinet-cap-flash" role="status">
           {capFlash}
-        </p>
+      </p>
       ) : null}
-      <div className="cabinet-grid cabinet-grid--stats">
-        <div className="cabinet-card">
-          <h2 className="cabinet-card__title">Ожидают подписи</h2>
-          <p className="cabinet-card__meta">{stats.pendingSignature}</p>
-          <p className="cabinet-card__hint">Записи, ожидающие подписи уполномоченного лица</p>
-        </div>
-        <div className="cabinet-card">
-          <h2 className="cabinet-card__title">В реестре</h2>
-          <p className="cabinet-card__meta">{stats.inRegistry}</p>
-          <p className="cabinet-card__hint">Записи об образовании с действующей подписью</p>
-        </div>
-      </div>
+      <h2 className="cabinet-section-title cabinet-section-title--balanced">Загрузка в реестр</h2>
 
-      <h2 className="cabinet-section-title">Поиск по номеру диплома</h2>
-      <p className="cabinet-section-lead">
-        Введите номер так, как он указан в реестре. Пример формата: <strong>ВСГ 1234567</strong> (буквы серии, пробел, цифры).
-      </p>
-      <div className="cabinet-card admin-form-card" style={{ marginTop: "0.75rem" }}>
-        <h3 className="cabinet-card__title">Найти и аннулировать</h3>
-        <div className="cabinet-diploma-search-row" style={{ marginTop: "0.65rem" }}>
-          <label className="cabinet-field cabinet-field--grow">
-            <span className="cabinet-field__label">Номер диплома</span>
-            <input
-              className="cabinet-field__input"
-              type="search"
-              value={annulDiplomaNumber}
-              onChange={(e) => {
-                setAnnulDiplomaNumber(e.target.value);
-                setAnnulFeedback(null);
-              }}
-              placeholder="Например: ВСГ 1234567"
-              autoComplete="off"
-              disabled={busy}
-            />
-          </label>
-          <button
-            type="button"
-            className="btn btn--secondary cabinet-annul-btn"
-            disabled={busy}
-            onClick={onAnnulDiploma}
-          >
-            <span className="btn__label">Аннулировать</span>
-          </button>
-        </div>
-        <p className="cabinet-card__hint" style={{ marginTop: "0.65rem", marginBottom: 0 }}>
-          Сравнение номера без учёта регистра.
-        </p>
-        {annulFeedback ? (
-          <p
-            className="cabinet-card__hint"
-            style={{
-              marginTop: "0.65rem",
-              marginBottom: 0,
-              color:
-                annulFeedback.type === "ok" ? "rgba(0, 242, 255, 0.88)" : "rgba(255, 201, 212, 0.95)",
-            }}
-            role={annulFeedback.type === "err" ? "alert" : "status"}
-          >
-            {annulFeedback.text}
-          </p>
-        ) : null}
-      </div>
-
-      <h2 className="cabinet-section-title">Загрузка в реестр</h2>
-      <p className="cabinet-section-lead">
-        Поля: <strong>ФИО</strong>, <strong>год выпуска</strong>, <strong>специальность</strong>, <strong>номер диплома</strong>. В CSV/Excel первая строка — заголовки
-        (например: ФИО; Год; Специальность; Номер диплома) или четыре колонки без заголовка в этом порядке.
-      </p>
-
-      <div className="cabinet-grid cabinet-grid--2" style={{ marginTop: "1rem" }}>
+      <div className="cabinet-grid cabinet-grid--2">
         <div className="cabinet-card admin-form-card">
           <h3 className="cabinet-card__title">Добавить один диплом</h3>
           <p className="cabinet-card__hint" style={{ marginBottom: "0.85rem" }}>
@@ -330,49 +234,56 @@ export default function UniversityCabinetPage() {
         </div>
       </div>
 
-      <div className="cabinet-table-wrap" style={{ marginTop: "1.5rem" }}>
-        <h3 className="cabinet-table-title">Загруженные записи о дипломах</h3>
-        <table className="cabinet-table cabinet-table--admin">
-          <thead>
-            <tr>
-              <th scope="col">ФИО</th>
-              <th scope="col">Год</th>
-              <th scope="col">Специальность</th>
-              <th scope="col">Номер диплома</th>
-              <th scope="col">КЭП</th>
-              <th scope="col">Добавлено</th>
-            </tr>
-          </thead>
-          <tbody>
-            {diplomas.length === 0 ? (
-              <tr>
-                <td colSpan={6} style={{ color: "var(--text-muted)" }}>
-                  Пока нет записей — добавьте диплом вручную или импортируйте файл.
-                </td>
-              </tr>
-            ) : (
-              diplomas.map((d) => (
-                <tr key={d.id}>
-                  <td>{d.fullName}</td>
-                  <td>{d.year}</td>
-                  <td>{d.specialty}</td>
-                  <td>{d.diplomaNumber}</td>
-                  <td>
-                    {d.signatureBase64 ? (
-                      <span className="cabinet-cap-badge" title={d.capAlgorithm ?? ""}>
-                        Подписано{d.signingKeyThumbprint ? ` · ${d.signingKeyThumbprint}` : ""}
-                      </span>
-                    ) : (
-                      <span style={{ color: "var(--text-muted)" }}>—</span>
-                    )}
-                  </td>
-                  <td>{fmtDate(d.createdAt)}</td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+      <h2 className="cabinet-section-title">Поиск по номеру диплома</h2>
+      <p className="cabinet-section-lead">
+        Введите номер так, как он указан в реестре. Пример формата: <strong>ВСГ 1234567</strong> (буквы серии, пробел, цифры).
+      </p>
+      <div className="cabinet-card admin-form-card" style={{ marginTop: "0.75rem" }}>
+        <h3 className="cabinet-card__title">Найти и аннулировать</h3>
+        <div className="cabinet-diploma-search-row" style={{ marginTop: "0.65rem" }}>
+          <label className="cabinet-field cabinet-field--grow">
+            <span className="cabinet-field__label">Номер диплома</span>
+            <input
+              className="cabinet-field__input"
+              type="search"
+              value={annulDiplomaNumber}
+              onChange={(e) => {
+                setAnnulDiplomaNumber(e.target.value);
+                setAnnulFeedback(null);
+              }}
+              placeholder="Например: ВСГ 1234567"
+              autoComplete="off"
+              disabled={busy}
+            />
+          </label>
+          <button
+            type="button"
+            className="btn btn--secondary cabinet-annul-btn"
+            disabled={busy}
+            onClick={onAnnulDiploma}
+          >
+            <span className="btn__label">Аннулировать</span>
+          </button>
+        </div>
+        <p className="cabinet-card__hint" style={{ marginTop: "0.65rem", marginBottom: 0 }}>
+          Сравнение номера без учёта регистра.
+        </p>
+        {annulFeedback ? (
+          <p
+            className="cabinet-card__hint"
+            style={{
+              marginTop: "0.65rem",
+              marginBottom: 0,
+              color:
+                annulFeedback.type === "ok" ? "rgba(0, 242, 255, 0.88)" : "rgba(255, 201, 212, 0.95)",
+            }}
+            role={annulFeedback.type === "err" ? "alert" : "status"}
+          >
+            {annulFeedback.text}
+          </p>
+        ) : null}
       </div>
+
     </CabinetShell>
   );
 }

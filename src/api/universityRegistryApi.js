@@ -7,16 +7,29 @@
  * - Аннулирование по номеру — например DELETE /api/v1/university/diplomas/by-number?number=...
  */
 
-import { API_BASE_URL, kotlinApiHeaders } from "./config.js";
+import { kotlinFetch } from "./config.js";
+
+const AUTH_STORAGE_KEY = "diasoft_auth";
 
 export async function getRegistryDashboardStats() {
-  // Kotlin: GET /api/v1/university/registry/dashboard
-  void API_BASE_URL;
-  void kotlinApiHeaders;
-  return Promise.resolve({
-    pendingSignature: 3,
-    inRegistry: 1248,
-  });
+  try {
+    const login = getCurrentAuthLogin();
+    if (!login) {
+      return { pendingSignature: 0, inRegistry: 0 };
+    }
+
+    const res = await kotlinFetch(`/api/v1/university/registry/dashboard?login=${encodeURIComponent(login)}`);
+    if (!res.ok) {
+      throw new Error(`Не удалось загрузить статистику реестра (HTTP ${res.status})`);
+    }
+    const data = await res.json();
+    return {
+      pendingSignature: Number(data?.pendingSignature ?? 0),
+      inRegistry: Number(data?.inRegistry ?? 0),
+    };
+  } catch {
+    return { pendingSignature: 0, inRegistry: 0 };
+  }
 }
 
 /* ——— Записи реестра дипломов (демо: localStorage; Kotlin: CRUD по реестру) ——— */
@@ -47,6 +60,28 @@ function readDiplomas() {
   } catch {
     return [];
   }
+}
+
+function getCurrentAuthLogin() {
+  try {
+    const localRaw = localStorage.getItem(AUTH_STORAGE_KEY);
+    if (localRaw) {
+      const localData = JSON.parse(localRaw);
+      if (typeof localData?.login === "string" && localData.login.trim()) {
+        return localData.login.trim();
+      }
+    }
+    const sessionRaw = sessionStorage.getItem(AUTH_STORAGE_KEY);
+    if (sessionRaw) {
+      const sessionData = JSON.parse(sessionRaw);
+      if (typeof sessionData?.login === "string" && sessionData.login.trim()) {
+        return sessionData.login.trim();
+      }
+    }
+  } catch {
+    // ignore parse/storage errors
+  }
+  return "";
 }
 
 function writeDiplomas(records) {
