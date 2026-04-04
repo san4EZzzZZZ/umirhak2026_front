@@ -621,6 +621,38 @@ body {
   border: 1px solid rgba(0, 242, 255, 0.28);
 }
 
+.password-rules {
+  margin: -0.3rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.password-rules__item {
+  font-size: 0.78rem;
+  line-height: 1.35;
+  color: rgba(244, 246, 251, 0.62);
+  transition: color 0.2s ease;
+}
+
+.password-rules__item::before {
+  content: "○";
+  display: inline-block;
+  width: 1rem;
+  color: rgba(244, 246, 251, 0.5);
+}
+
+.password-rules__item.is-met {
+  color: #b8f5e8;
+}
+
+.password-rules__item.is-met::before {
+  content: "✓";
+  color: #3fe2b8;
+}
+
 .auth-demo {
   margin-top: 1.25rem;
   padding: 0.9rem 1rem;

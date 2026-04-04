@@ -21,8 +21,20 @@ const LOGIN_PLACEHOLDER = {
   [ROLES.employer]: "hr@company.ru",
 };
 
+function passwordChecks(password) {
+  const value = String(password ?? "");
+  return {
+    minLength: value.length >= 8,
+    lower: /[a-zа-яё]/.test(value),
+    upper: /[A-ZА-ЯЁ]/.test(value),
+    special: /[^A-Za-zА-Яа-яЁё0-9]/.test(value),
+  };
+}
+
 export default function RegisterByRolePage({ role }) {
   const [authError, setAuthError] = useState(null);
+  const [passwordValue, setPasswordValue] = useState("");
+  const [passwordConfirmValue, setPasswordConfirmValue] = useState("");
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -31,6 +43,9 @@ export default function RegisterByRolePage({ role }) {
   useEffect(() => {
     if (user) navigate(cabinetPathForRole(user.role), { replace: true });
   }, [user, navigate]);
+
+  const checks = useMemo(() => passwordChecks(passwordValue), [passwordValue]);
+  const isPasswordStrong = checks.minLength && checks.lower && checks.upper && checks.special;
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -41,8 +56,8 @@ export default function RegisterByRolePage({ role }) {
     const lastName = fd.get("lastName")?.toString().trim() ?? "";
     const firstName = fd.get("firstName")?.toString().trim() ?? "";
     const middleName = fd.get("middleName")?.toString().trim() ?? "";
-    const password = fd.get("password")?.toString() ?? "";
-    const passwordConfirm = fd.get("passwordConfirm")?.toString() ?? "";
+    const password = passwordValue;
+    const passwordConfirm = passwordConfirmValue;
 
     if (!email && !password) {
       setAuthError("Введите email и пароль.");
@@ -60,8 +75,8 @@ export default function RegisterByRolePage({ role }) {
       setAuthError("Введите пароль.");
       return;
     }
-    if (password.length < 6) {
-      setAuthError("Пароль должен быть не короче 6 символов.");
+    if (!isPasswordStrong) {
+      setAuthError("Пароль не соответствует требованиям.");
       return;
     }
     if (password !== passwordConfirm) {
@@ -138,13 +153,24 @@ export default function RegisterByRolePage({ role }) {
             autoComplete="new-password"
             required
             placeholder="••••••••"
+            value={passwordValue}
+            onChange={(e) => setPasswordValue(e.target.value)}
+            minLength={8}
           />
+          <ul className="password-rules" aria-live="polite">
+            <li className={`password-rules__item${checks.minLength ? " is-met" : ""}`}>Минимум 8 символов</li>
+            <li className={`password-rules__item${checks.lower ? " is-met" : ""}`}>Есть строчная буква</li>
+            <li className={`password-rules__item${checks.upper ? " is-met" : ""}`}>Есть прописная буква</li>
+            <li className={`password-rules__item${checks.special ? " is-met" : ""}`}>Есть спецсимвол</li>
+          </ul>
           <PasswordField
             label="Повторите пароль"
             name="passwordConfirm"
             autoComplete="new-password"
             required
             placeholder="••••••••"
+            value={passwordConfirmValue}
+            onChange={(e) => setPasswordConfirmValue(e.target.value)}
           />
 
           <button type="submit" className="btn btn--primary">
