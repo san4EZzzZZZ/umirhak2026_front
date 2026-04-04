@@ -60,8 +60,8 @@ const STEPS = [
 const AUDIENCE = [
   {
     id: "vuz",
-    title: "Вузам и колледжам",
-    desc: "Ведение реестра выпускников, ЭП, выгрузки и сопровождение данных без лишней бюрократии.",
+    title: "Вузам",
+    desc: "Ведение реестра выпускников, ЭП и сопровождение данных без лишней бюрократии.",
     accent: "purple",
   },
   {
@@ -253,7 +253,7 @@ export default function HomePage() {
                 </Link>
               ) : (
                 <>
-                  <Link to="/login/vuz" className="btn btn--primary landing-cta__btn">
+                  <Link to="/request/university" className="btn btn--primary landing-cta__btn">
                     <span className="btn__shine" aria-hidden="true" />
                     <span className="btn__label">Оставить заявку</span>
                   </Link>

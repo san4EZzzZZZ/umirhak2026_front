@@ -18,6 +18,7 @@ import ForgotPasswordPage from "./pages/ForgotPasswordPage.jsx";
 import ResetPasswordPage from "./pages/ResetPasswordPage.jsx";
 import UniversityForgotPasswordPage from "./pages/UniversityForgotPasswordPage.jsx";
 import RegisterByRolePage from "./pages/RegisterByRolePage.jsx";
+import UniversityApplicationPage from "./pages/UniversityApplicationPage.jsx";
 
 export default function App() {
   return (
@@ -32,6 +33,7 @@ export default function App() {
             <Route path="/login/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/login/reset-password" element={<ResetPasswordPage />} />
             <Route path="/login/vuz" element={<UniversityLoginPage />} />
+            <Route path="/request/university" element={<UniversityApplicationPage />} />
             <Route path="/login/vuz/forgot-password" element={<UniversityForgotPasswordPage />} />
             <Route path="/login/admin" element={<AdminLoginPage />} />
             <Route path="/login/admin/forgot-password" element={<AdminForgotPasswordPage />} />

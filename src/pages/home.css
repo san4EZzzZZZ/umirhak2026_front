@@ -764,8 +764,8 @@
     content: "";
     position: absolute;
     top: 1.35rem;
-    left: 8%;
-    right: 8%;
+    left: calc(2.5rem - 4px);
+    right: calc(25% - 0.75rem);
     height: 2px;
     background: linear-gradient(90deg, rgba(123, 44, 191, 0.5), rgba(0, 242, 255, 0.35), rgba(224, 17, 95, 0.45));
     border-radius: 2px;

@@ -209,6 +209,10 @@ body {
   letter-spacing: -0.02em;
 }
 
+.auth-title--application-success {
+  margin-bottom: 2.8rem;
+}
+
 .auth-subtitle {
   margin: 0 0 1.35rem;
   font-size: 0.9rem;
@@ -254,6 +258,10 @@ body {
 .auth-crosslink--top {
   margin: -0.35rem 0 1rem;
   text-align: left;
+}
+
+.auth-crosslink--spacious {
+  margin-top: 2.8rem;
 }
 
 .auth-crosslink .link-muted {
@@ -619,6 +627,11 @@ body {
   color: #b8f5e8;
   background: rgba(0, 242, 255, 0.08);
   border: 1px solid rgba(0, 242, 255, 0.28);
+}
+
+.auth-success.auth-success--application {
+  margin-top: 0;
+  margin-bottom: 2.2rem;
 }
 
 .password-rules {
