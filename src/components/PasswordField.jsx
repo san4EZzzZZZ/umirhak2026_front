@@ -2,24 +2,30 @@ import { useId, useState } from "react";
 
 function IconEye() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <path
-        d="M12 5C7 5 2.73 8.11 1 12c1.73 3.89 6 7 11 7s9.27-3.11 11-7c-1.73-3.89-6-7-11-7zm0 12a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-8a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"
-        fill="currentColor"
-        fillOpacity="0.85"
+        d="M2 12C3.8 8.9 7.3 7 12 7s8.2 1.9 10 5c-1.8 3.1-5.3 5-10 5S3.8 15.1 2 12z"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
+      <circle cx="12" cy="12" r="2.7" stroke="currentColor" strokeWidth="2" />
     </svg>
   );
 }
 
 function IconEyeOff() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <path
-        d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.33-1.03 2.45-2.28 3.31-3.67-1.73-3.89-6-7-11-7-1.43 0-2.8.26-4.09.69l2.17 2.17c.57-.23 1.18-.36 1.83-.36zm-8-2.73 2.28 2.28A11.93 11.93 0 0 0 1 12c1.73 3.89 6 7 11 7 1.55 0 3.03-.3 4.38-.84l.42.42 1.41 1.41 1.98-1.98-16-16-1.98 1.98zm5.6 5.6 1.65 1.65A2.98 2.98 0 0 1 12 15c-1.66 0-3-1.34-3-3 0-.52.13-1.02.36-1.45l1.24 1.24z"
-        fill="currentColor"
-        fillOpacity="0.85"
+        d="M2 12C3.8 8.9 7.3 7 12 7s8.2 1.9 10 5c-1.8 3.1-5.3 5-10 5S3.8 15.1 2 12z"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
+      <path d="M4 4l16 16" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
     </svg>
   );
 }

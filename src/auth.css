@@ -210,7 +210,7 @@ body {
 }
 
 .auth-title--application-success {
-  margin-bottom: 2.8rem;
+  margin-bottom: 3.6rem;
 }
 
 .auth-subtitle {
@@ -261,7 +261,7 @@ body {
 }
 
 .auth-crosslink--spacious {
-  margin-top: 2.8rem;
+  margin-top: 3.6rem;
 }
 
 .auth-crosslink .link-muted {
@@ -333,6 +333,10 @@ body {
   gap: 1rem;
 }
 
+.auth-form--vuz-login {
+  margin-top: 1.1rem;
+}
+
 .field {
   display: flex;
   flex-direction: column;
@@ -388,14 +392,14 @@ body {
 
 .field__password-toggle {
   position: absolute;
-  right: 0.4rem;
+  right: 0.35rem;
   top: 50%;
   transform: translateY(-50%);
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2.35rem;
-  height: 2.35rem;
+  width: 2.05rem;
+  height: 2.05rem;
   padding: 0;
   border: none;
   border-radius: 8px;
@@ -616,6 +620,10 @@ body {
   transform: translateY(0);
   background: rgba(224, 17, 95, 0.14);
   border: 1px solid rgba(224, 17, 95, 0.35);
+}
+
+.auth-error--vuz.is-visible {
+  margin-top: 1.1rem;
 }
 
 .auth-success {

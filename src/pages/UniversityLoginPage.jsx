@@ -26,11 +26,11 @@ export default function UniversityLoginPage() {
     const login = fd.get("login")?.toString().trim();
     const password = fd.get("password")?.toString() ?? "";
     if (!login && !password) {
-      setAuthError("Введите логин и пароль.");
+      setAuthError("Введите почту и пароль.");
       return;
     }
     if (!login) {
-      setAuthError("Введите логин.");
+      setAuthError("Введите почту.");
       return;
     }
     if (!password) {
@@ -67,13 +67,9 @@ export default function UniversityLoginPage() {
         <h1 id="auth-title-vuz" className="auth-title">
           Вход для образовательной организации
         </h1>
-        <p className="auth-subtitle">
-          Загрузка реестров выпускников, подписание данных и ведение учётных записей. Используйте учётные данные,
-          выданные администратором платформы.
-        </p>
 
         <p
-          className={`auth-error${authError ? " is-visible" : ""}`}
+          className={`auth-error auth-error--vuz${authError ? " is-visible" : ""}`}
           role={authError ? "alert" : undefined}
           aria-live="polite"
           aria-hidden={!authError}
@@ -81,11 +77,11 @@ export default function UniversityLoginPage() {
           {authError ?? ""}
         </p>
 
-        <form className="auth-form" onSubmit={onSubmit} noValidate>
+        <form className="auth-form auth-form--vuz-login" onSubmit={onSubmit} noValidate>
           <input type="hidden" name="role" value="university" />
 
           <label className="field">
-            <span className="field__label">Email или логин ВУЗа</span>
+            <span className="field__label">Email ВУЗа</span>
             <input
               type="text"
               name="login"
@@ -107,11 +103,8 @@ export default function UniversityLoginPage() {
             <label className="checkbox">
               <input type="checkbox" name="remember" defaultChecked />
               <span className="checkbox__box" aria-hidden="true" />
-              <span>Запомнить устройство (сохранять после закрытия браузера)</span>
+              <span>Запомнить устройство</span>
             </label>
-            <Link to="/login/vuz/forgot-password" className="link-muted">
-              Забыли пароль?
-            </Link>
           </div>
 
           <button type="submit" className={`btn btn--primary${rippling ? " is-rippling" : ""}`}>
@@ -119,9 +112,6 @@ export default function UniversityLoginPage() {
             <span className="btn__label">Войти в кабинет ВУЗа</span>
           </button>
         </form>
-
-        <DemoCredentialsPanel />
-
         <p className="auth-crosslink">
           <Link to="/login" className="link-muted">
             Студент или работодатель? Вход по другой роли
