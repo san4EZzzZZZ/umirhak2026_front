@@ -138,7 +138,7 @@ export default function HomePage() {
                 Проверяйте образование быстро — без сомнений и лишних писем
               </h1>
               <p className="landing-hero__lead">
-                Платформа с раздельной авторизацией для ВУЗов, студентов и HR: ведение реестра дипломов, проверка по
+                Платформа с раздельной авторизацией для ВУЗов, выпускников и HR: ведение реестра дипломов, проверка по
                 номеру и QR, выпуск ссылок для подтверждения и понятный статус документа в процессе найма.
               </p>
               <div className={`landing-hero__actions${user ? " landing-hero__actions--with-session" : ""}`}>
@@ -169,7 +169,7 @@ export default function HomePage() {
                   <>
                     <Link to="/login?role=student" className="btn btn--primary landing-hero__btn">
                       <span className="btn__shine" aria-hidden="true" />
-                      <span className="btn__label">Войти как студент</span>
+                      <span className="btn__label">Войти как выпускник</span>
                     </Link>
                     <Link to="/login?role=employer" className="btn btn--secondary landing-hero__btn">
                       <span className="btn__label">Войти как HR</span>
@@ -206,7 +206,7 @@ export default function HomePage() {
           <header className="landing-section__head">
             <h2 className="landing-section__title">Как это работает</h2>
             <p className="landing-section__subtitle">
-              Короткая цепочка от данных вуза до ответа для работодателя — без ручной пересылки сканов.
+              Короткая цепочка от данных вуза до ответа для работодателя — без ручной пересылки и проверки сканов.
             </p>
           </header>
           <ol className="landing-steps">
@@ -248,12 +248,12 @@ export default function HomePage() {
         <section className="landing-cta" aria-labelledby="landing-cta-title">
           <div className="landing-cta__inner">
             <h2 id="landing-cta-title" className="landing-cta__title">
-              {user ? "Продолжить работу в кабинете?" : "Авторизация для образовательных организаций"}
+              {user ? "Продолжить работу в кабинете?" : "Регистрация образовательной организации"}
             </h2>
             <p className="landing-cta__text">
               {user
                 ? "Вы уже вошли в систему — откройте свой кабинет или изучите материалы на странице."
-                : "Если вы представляете вуз или колледж, войдите в отдельный кабинет образовательной организации для работы с реестром дипломов."}
+                : "Если вы представляете вуз, оставьте заявку на подключение. Мы свяжемся с вами для регистрации организации и выдачи доступов."}
             </p>
             <div className="landing-cta__actions">
               {user ? (
@@ -265,7 +265,7 @@ export default function HomePage() {
                 <>
                   <Link to="/login/vuz" className="btn btn--primary landing-cta__btn">
                     <span className="btn__shine" aria-hidden="true" />
-                    <span className="btn__label">Войти как ВУЗ</span>
+                    <span className="btn__label">Оставить заявку</span>
                   </Link>
                 </>
               )}
@@ -278,11 +278,11 @@ export default function HomePage() {
             <strong>DIASOFT</strong> — цифровые сервисы с упором на безопасность, масштаб и сопровождение.
           </p>
           <p className="landing-footer__admin-wrap">
-            <Link to="/login/admin" className="landing-footer__admin">
-              Вход администратора платформы
+            <Link to="/login/vuz" className="landing-footer__admin">
+              Вход для ВУЗов
             </Link>
           </p>
-          <p className="landing-footer__note">Демонстрационный стенд · 2026</p>
+          <p className="landing-footer__note">ГазМяс · 2026</p>
         </footer>
       </div>
     </AuthShell>
