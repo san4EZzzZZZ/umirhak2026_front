@@ -1,19 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import QRCode from "qrcode";
 import * as studentDiplomaApi from "../../api/studentDiplomaApi.js";
+import { useAuth } from "../../auth/AuthContext.jsx";
 import CabinetShell from "../../components/CabinetShell.jsx";
 import "./cabinet.css";
-
-function formatRemaining(ms) {
-  if (ms <= 0) return "истекло";
-  const s = Math.floor(ms / 1000);
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  const sec = s % 60;
-  if (h > 0) return `${h} ч ${m} мин ${sec} с`;
-  if (m > 0) return `${m} мин ${sec} с`;
-  return `${sec} с`;
-}
 
 const TTL_OPTIONS = [
   { value: 24, label: "24 часа" },
@@ -21,48 +11,68 @@ const TTL_OPTIONS = [
   { value: 168, label: "7 суток (168 ч)" },
 ];
 
-/** Kotlin: studentDiplomaApi.js */
+function formatDate(value) {
+  return new Date(value).toLocaleString("ru-RU");
+}
+
 export default function StudentCabinetPage() {
-  const [record, setRecord] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchBusy, setSearchBusy] = useState(false);
-  const [searchMessage, setSearchMessage] = useState(null);
+  const { user } = useAuth();
+  const fullName = useMemo(() => [user?.lastName, user?.firstName].filter(Boolean).join(" ").trim(), [user?.firstName, user?.lastName]);
+
+  const [form, setForm] = useState({
+    universityCode: "",
+    diplomaNumber: "",
+    graduationYear: "",
+    specialty: "",
+  });
+  const [checkBusy, setCheckBusy] = useState(false);
+  const [checkResult, setCheckResult] = useState(null);
+  const [checkError, setCheckError] = useState("");
+
   const [ttlHours, setTtlHours] = useState(72);
-  const [issued, setIssued] = useState(null);
+  const [issueBusy, setIssueBusy] = useState(false);
+  const [issueError, setIssueError] = useState("");
+  const [linksBusy, setLinksBusy] = useState(false);
+  const [links, setLinks] = useState([]);
+  const [selectedToken, setSelectedToken] = useState("");
   const [qrDataUrl, setQrDataUrl] = useState("");
-  const [shareBusy, setShareBusy] = useState(false);
   const [copyHint, setCopyHint] = useState("");
-  const [nowTick, setNowTick] = useState(() => Date.now());
+
+  const selectedLink = useMemo(
+    () => links.find((l) => l.token === selectedToken) ?? links.find((l) => l.status === "ACTIVE") ?? links[0] ?? null,
+    [links, selectedToken]
+  );
+
+  const loadLinks = async () => {
+    setLinksBusy(true);
+    try {
+      const data = await studentDiplomaApi.listStudentVerificationLinks();
+      setLinks(data);
+      if (!selectedToken && data.length > 0) {
+        setSelectedToken(data[0].token);
+      }
+    } finally {
+      setLinksBusy(false);
+    }
+  };
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const r = await studentDiplomaApi.getMyDiplomaRecord();
-        if (!cancelled) setRecord(r);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
+    loadLinks();
   }, []);
 
   useEffect(() => {
-    if (!issued?.url) {
+    if (!selectedLink?.verificationUrl) {
       setQrDataUrl("");
       return;
     }
     let cancelled = false;
-    QRCode.toDataURL(issued.url, {
-      width: 220,
+    QRCode.toDataURL(selectedLink.verificationUrl, {
+      width: 240,
       margin: 2,
       color: { dark: "#0a0a24ff", light: "#ffffffff" },
     })
-      .then((dataUrl) => {
-        if (!cancelled) setQrDataUrl(dataUrl);
+      .then((url) => {
+        if (!cancelled) setQrDataUrl(url);
       })
       .catch(() => {
         if (!cancelled) setQrDataUrl("");
@@ -70,194 +80,177 @@ export default function StudentCabinetPage() {
     return () => {
       cancelled = true;
     };
-  }, [issued?.url]);
+  }, [selectedLink?.verificationUrl]);
 
-  useEffect(() => {
-    if (!issued?.expiresAt) return undefined;
-    const t = setInterval(() => setNowTick(Date.now()), 1000);
-    return () => clearInterval(t);
-  }, [issued?.expiresAt]);
-
-  const onSearch = async (e) => {
+  const onCheckDiploma = async (e) => {
     e.preventDefault();
-    setSearchMessage(null);
-    setSearchBusy(true);
+    setCheckError("");
+    setCheckResult(null);
+    setIssueError("");
+    if (!form.universityCode.trim() || !form.diplomaNumber.trim() || !form.graduationYear.trim() || !form.specialty.trim()) {
+      setCheckError("Заполните все поля диплома.");
+      return;
+    }
+    setCheckBusy(true);
     try {
-      const res = await studentDiplomaApi.findSelfInRegistry(searchQuery);
-      if (res.found) {
-        setRecord(res.record);
-        setSearchMessage({ type: "ok", text: "Запись найдена в реестре и отображена ниже." });
-      } else if (res.reason === "empty") {
-        setSearchMessage({ type: "err", text: "Введите номер диплома или ФИО." });
-      } else {
-        setSearchMessage({
-          type: "err",
-          text: "Запись не найдена. Проверьте номер диплома или написание ФИО.",
-        });
+      const result = await studentDiplomaApi.checkDiplomaForCurrentStudent({
+        universityCode: form.universityCode,
+        diplomaNumber: form.diplomaNumber,
+        graduationYear: Number(form.graduationYear),
+        specialty: form.specialty,
+      });
+      setCheckResult(result);
+      if (!result.found) {
+        setCheckError("Диплом не найден в реестре. Проверьте данные.");
       }
+    } catch (error) {
+      setCheckError(error instanceof Error ? error.message : "Ошибка проверки диплома.");
     } finally {
-      setSearchBusy(false);
+      setCheckBusy(false);
     }
   };
 
-  const shareWithEmployer = async () => {
-    setShareBusy(true);
-    setCopyHint("");
+  const onIssueQr = async () => {
+    if (!checkResult?.found) {
+      setIssueError("Сначала подтвердите диплом.");
+      return;
+    }
+    setIssueError("");
+    setIssueBusy(true);
     try {
-      const res = await studentDiplomaApi.issueVerificationLink({ ttlHours });
-      setIssued({
-        token: res.token,
-        url: res.verificationUrl,
-        ttlHours: res.ttlHours,
-        issuedAt: res.issuedAt,
-        expiresAt: res.expiresAt,
+      const created = await studentDiplomaApi.createStudentVerificationLink({
+        universityCode: form.universityCode,
+        diplomaNumber: form.diplomaNumber,
+        ttlHours,
       });
-      setNowTick(Date.now());
+      await loadLinks();
+      setSelectedToken(created.token);
+    } catch (error) {
+      setIssueError(error instanceof Error ? error.message : "Не удалось создать QR.");
     } finally {
-      setShareBusy(false);
+      setIssueBusy(false);
+    }
+  };
+
+  const onRevoke = async (token) => {
+    try {
+      await studentDiplomaApi.revokeStudentVerificationLink(token);
+      await loadLinks();
+    } catch (error) {
+      setIssueError(error instanceof Error ? error.message : "Не удалось деактивировать ссылку.");
     }
   };
 
   const copyLink = async () => {
-    if (!issued?.url) return;
+    if (!selectedLink?.verificationUrl) return;
     try {
-      await navigator.clipboard.writeText(issued.url);
+      await navigator.clipboard.writeText(selectedLink.verificationUrl);
       setCopyHint("Ссылка скопирована");
-      setTimeout(() => setCopyHint(""), 2500);
+      setTimeout(() => setCopyHint(""), 2200);
     } catch {
-      setCopyHint("Не удалось скопировать — выделите ссылку вручную");
+      setCopyHint("Не удалось скопировать");
     }
   };
-
-  const remainingMs = issued?.expiresAt ? new Date(issued.expiresAt).getTime() - nowTick : 0;
-  const linkExpired = issued && remainingMs <= 0;
 
   return (
     <CabinetShell
       badge="Личный кабинет студента"
-      title="Проверка диплома для работодателя"
-      subtitle="Найдите свою запись, выпустите временную ссылку и QR-код — доступ для HR ограничен по времени в целях безопасности."
+      title="QR для проверки диплома"
+      subtitle="Проверьте диплом в реестре, выпустите QR-ссылку с TTL и деактивируйте её в любой момент."
     >
-      <div className="student-cabinet-hero">
-        <p className="student-cabinet-hero__title">Возможности кабинета</p>
-        <ul className="student-cabinet-hero__list">
-          <li>
-            <span className="student-cabinet-hero__icon" aria-hidden="true">
-              +
-            </span>
-            <span>Поиск себя: ввод номера диплома или ФИО</span>
-          </li>
-          <li>
-            <span className="student-cabinet-hero__icon" aria-hidden="true">
-              +
-            </span>
-            <span>Генерация ссылки: кнопка «Поделиться с работодателем»</span>
-          </li>
-          <li>
-            <span className="student-cabinet-hero__icon" aria-hidden="true">
-              +
-            </span>
-            <span>QR-код: уникальный код для бумажного или цифрового резюме</span>
-          </li>
-          <li>
-            <span className="student-cabinet-hero__icon" aria-hidden="true">
-              +
-            </span>
-            <span>Временный доступ: ссылка действует ограниченное время</span>
-          </li>
-        </ul>
-      </div>
-
-      <div className="cabinet-card student-cabinet-search" style={{ marginTop: "1rem" }}>
-        <h2 className="cabinet-card__title">Поиск себя в реестре</h2>
-        <p className="cabinet-card__hint" style={{ marginBottom: "0.75rem" }}>
-          Введите номер диплома или ФИО так, как они указаны в документе — мы найдём вашу запись в демо-реестре.
-        </p>
-        <form className="student-cabinet-search__form" onSubmit={onSearch}>
-          <label className="cabinet-field" style={{ marginBottom: 0, flex: "1 1 220px" }}>
-            <span className="cabinet-field__label">Номер диплома или ФИО</span>
-            <input
-              className="cabinet-field__input"
-              name="registrySearch"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Например: ДБ-2025-004921 или Петрова Анна"
-              autoComplete="off"
-            />
-          </label>
-          <button type="submit" className="btn btn--secondary student-cabinet-search__btn" disabled={searchBusy}>
-            {searchBusy ? "Поиск…" : "Найти"}
-          </button>
+      <div className="cabinet-card" style={{ marginTop: "0.6rem" }}>
+        <h2 className="cabinet-card__title">Шаг 1. Данные диплома</h2>
+        <p className="cabinet-card__hint">ФИО берётся из аккаунта, остальные поля вводятся вручную.</p>
+        <form className="admin-user-form" onSubmit={onCheckDiploma}>
+          <div className="admin-user-form__grid" style={{ marginTop: "0.8rem" }}>
+            <label className="cabinet-field">
+              <span className="cabinet-field__label">ФИО (из аккаунта)</span>
+              <input className="cabinet-field__input" value={fullName || "—"} disabled />
+            </label>
+            <label className="cabinet-field">
+              <span className="cabinet-field__label">Код ВУЗа</span>
+              <input
+                className="cabinet-field__input"
+                value={form.universityCode}
+                onChange={(e) => setForm((v) => ({ ...v, universityCode: e.target.value }))}
+                placeholder="DEMO"
+              />
+            </label>
+            <label className="cabinet-field">
+              <span className="cabinet-field__label">Номер диплома</span>
+              <input
+                className="cabinet-field__input"
+                value={form.diplomaNumber}
+                onChange={(e) => setForm((v) => ({ ...v, diplomaNumber: e.target.value }))}
+                placeholder="ВСГ 1234567"
+              />
+            </label>
+            <label className="cabinet-field">
+              <span className="cabinet-field__label">Год выпуска</span>
+              <input
+                className="cabinet-field__input"
+                type="number"
+                min={1950}
+                max={2100}
+                value={form.graduationYear}
+                onChange={(e) => setForm((v) => ({ ...v, graduationYear: e.target.value }))}
+                placeholder="2025"
+              />
+            </label>
+            <label className="cabinet-field admin-user-form__full">
+              <span className="cabinet-field__label">Специальность</span>
+              <input
+                className="cabinet-field__input"
+                value={form.specialty}
+                onChange={(e) => setForm((v) => ({ ...v, specialty: e.target.value }))}
+                placeholder="09.03.01 Информатика и вычислительная техника"
+              />
+            </label>
+          </div>
+          {checkError ? (
+            <p className="auth-error is-visible" role="alert" style={{ marginTop: "0.75rem" }}>
+              {checkError}
+            </p>
+          ) : null}
+          <div className="cabinet-actions" style={{ marginTop: "0.9rem" }}>
+            <button type="submit" className="btn btn--primary" disabled={checkBusy}>
+              <span className="btn__shine" aria-hidden="true" />
+              <span className="btn__label">{checkBusy ? "Проверка…" : "Проверить хэш в реестре"}</span>
+            </button>
+          </div>
         </form>
-        {searchMessage ? (
-          <p
-            className={
-              searchMessage.type === "ok" ? "student-cabinet-search__ok" : "student-cabinet-search__err"
-            }
-            role="status"
-          >
-            {searchMessage.text}
-          </p>
-        ) : null}
       </div>
 
-      <div className="cabinet-grid cabinet-grid--2" style={{ marginTop: "1rem" }}>
-        <div className="cabinet-card">
-          <h2 className="cabinet-card__title">Статус записи</h2>
-          {loading || !record ? (
-            <p className="cabinet-card__hint">Загрузка… (Kotlin: GET /api/v1/student/me/diploma-record)</p>
-          ) : (
-            <>
-              <p className="cabinet-card__meta" style={{ fontSize: "1rem", fontWeight: 600 }}>
-                {record.status === "CONFIRMED" ? "Подтверждена в реестре" : record.status}
-              </p>
-              <p className="cabinet-card__hint">
-                ВУЗ: {record.universityName} · выпуск {record.graduationYear} · {record.program}
-              </p>
-              {record.holderFullName ? (
-                <p className="cabinet-card__hint">ФИО в реестре: {record.holderFullName}</p>
-              ) : null}
-            </>
-          )}
-        </div>
-        <div className="cabinet-card">
-          <h2 className="cabinet-card__title">Документ</h2>
-          {loading || !record ? (
-            <p className="cabinet-card__hint">…</p>
-          ) : (
-            <>
-              <p className="cabinet-card__meta" style={{ fontSize: "1rem", fontWeight: 600 }}>
-                {record.documentType}
-              </p>
-              {record.diplomaNumber ? (
-                <p className="cabinet-card__hint">Регистрационный номер: {record.diplomaNumber}</p>
-              ) : (
-                <p className="cabinet-card__hint">
-                  Серия и номер скрыты; полные реквизиты доступны при проверке по выданной вами ссылке
-                </p>
-              )}
-            </>
-          )}
-        </div>
+      <div className="cabinet-card" style={{ marginTop: "1rem" }}>
+        <h2 className="cabinet-card__title">Шаг 2. Результат проверки</h2>
+        {checkResult?.found ? (
+          <div className="student-step-result student-step-result--ok" role="status">
+            <span className="student-step-result__icon" aria-hidden="true">
+              ✓
+            </span>
+            <div>
+              <p className="student-step-result__title">Диплом найден в реестре</p>
+              <p className="cabinet-card__hint">Хэш совпал с базой дипломов. Можно выпускать QR.</p>
+            </div>
+          </div>
+        ) : (
+          <div className="student-step-result student-step-result--wait">
+            <span className="student-step-result__icon" aria-hidden="true">
+              !
+            </span>
+            <div>
+              <p className="student-step-result__title">Ожидается проверка</p>
+              <p className="cabinet-card__hint">Введите данные и выполните проверку в шаге 1.</p>
+            </div>
+          </div>
+        )}
       </div>
 
-      <div className="cabinet-card student-cabinet-share" style={{ marginTop: "1rem" }}>
-        <h2 className="cabinet-card__title">Поделиться с работодателем</h2>
-        <p className="cabinet-card__hint" style={{ marginBottom: "0.85rem" }}>
-          Ссылка одноразово подтверждает подлинность в рамках выбранного срока (TTL). После истечения времени проверка по
-          старой ссылке недоступна — выпустите новую. Kotlin: POST /api/v1/student/verification-links
-        </p>
-        <div className="cabinet-field" style={{ maxWidth: "280px" }}>
-          <span className="cabinet-field__label" id="ttl-label">
-            Срок действия ссылки
-          </span>
-          <select
-            className="cabinet-field__input"
-            id="ttl-select"
-            aria-labelledby="ttl-label"
-            value={ttlHours}
-            onChange={(e) => setTtlHours(Number(e.target.value))}
-          >
+      <div className="cabinet-card" style={{ marginTop: "1rem" }}>
+        <h2 className="cabinet-card__title">Шаг 3. Создание QR</h2>
+        <div className="cabinet-field" style={{ maxWidth: "280px", marginTop: "0.75rem" }}>
+          <span className="cabinet-field__label">Срок действия</span>
+          <select className="cabinet-field__input" value={ttlHours} onChange={(e) => setTtlHours(Number(e.target.value))}>
             {TTL_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
                 {o.label}
@@ -265,74 +258,83 @@ export default function StudentCabinetPage() {
             ))}
           </select>
         </div>
-        <div className="cabinet-actions" style={{ marginTop: "0.75rem" }}>
-          <button
-            type="button"
-            className="btn btn--primary"
-            onClick={shareWithEmployer}
-            disabled={shareBusy || loading}
-          >
+        {issueError ? (
+          <p className="auth-error is-visible" role="alert" style={{ marginTop: "0.75rem" }}>
+            {issueError}
+          </p>
+        ) : null}
+        <div className="cabinet-actions" style={{ marginTop: "0.9rem" }}>
+          <button type="button" className="btn btn--primary" disabled={!checkResult?.found || issueBusy} onClick={onIssueQr}>
             <span className="btn__shine" aria-hidden="true" />
-            <span className="btn__label">Поделиться с работодателем</span>
+            <span className="btn__label">{issueBusy ? "Создание…" : "Создать QR-ссылку"}</span>
           </button>
         </div>
+      </div>
 
-        {issued ? (
-          <div className="student-cabinet-issued">
-            <div className="student-cabinet-issued__row">
-              <div className="student-cabinet-issued__link-block">
-                <p className="student-cabinet-issued__label">Временная ссылка</p>
-                <div className="cabinet-mock student-cabinet-issued__url" role="status">
-                  {issued.url}
-                </div>
-                <div className="student-cabinet-issued__meta">
-                  <span>Выдано: {new Date(issued.issuedAt).toLocaleString("ru-RU")}</span>
-                  <span>TTL: {issued.ttlHours} ч</span>
-                </div>
-                <div
-                  className={`student-cabinet-countdown${linkExpired ? " student-cabinet-countdown--expired" : ""}${remainingMs > 0 && remainingMs < 3600000 ? " student-cabinet-countdown--soon" : ""}`}
-                  role="timer"
-                  aria-live="polite"
-                >
-                  {linkExpired
-                    ? "Срок действия ссылки истёк — сгенерируйте новую."
-                    : `Осталось: ${formatRemaining(remainingMs)}`}
-                </div>
-                <button type="button" className="btn btn--secondary student-cabinet-copy" onClick={() => void copyLink()}>
-                  Копировать ссылку
-                </button>
-                {copyHint ? (
-                  <span className="student-cabinet-copy-hint" role="status">
-                    {copyHint}
-                  </span>
+      <div className="cabinet-grid cabinet-grid--2" style={{ marginTop: "1rem" }}>
+        <div className="cabinet-card">
+          <h2 className="cabinet-card__title">Мои QR-ссылки</h2>
+          {linksBusy ? <p className="cabinet-card__hint">Загрузка…</p> : null}
+          {!linksBusy && links.length === 0 ? <p className="cabinet-card__hint">Ссылок пока нет.</p> : null}
+          <div className="student-links-list">
+            {links.map((link) => (
+              <div
+                key={link.token}
+                className={`student-link-card${selectedLink?.token === link.token ? " is-active" : ""}`}
+                onClick={() => setSelectedToken(link.token)}
+              >
+                <p className="student-link-card__status">{link.status}</p>
+                <p className="student-link-card__meta">Выдано: {formatDate(link.issuedAt)}</p>
+                <p className="student-link-card__meta">Истекает: {formatDate(link.expiresAt)}</p>
+                {link.status === "ACTIVE" ? (
+                  <button
+                    type="button"
+                    className="btn btn--secondary student-link-card__revoke"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRevoke(link.token);
+                    }}
+                  >
+                    Деактивировать
+                  </button>
                 ) : null}
               </div>
-              <div className="student-cabinet-qr">
-                <p className="student-cabinet-issued__label">QR-код для резюме</p>
-                <p className="cabinet-card__hint" style={{ marginTop: 0, marginBottom: "0.5rem" }}>
-                  Уникальный код ведёт на ту же временную ссылку — можно вшить в печатное резюме или приложить к PDF.
-                </p>
-                {qrDataUrl ? (
-                  <>
-                    <div className="student-cabinet-qr__frame">
-                      <img src={qrDataUrl} width={220} height={220} alt="QR-код проверки диплома" />
-                    </div>
-                    <a className="btn btn--secondary student-cabinet-qr__dl" href={qrDataUrl} download="diploma-verify-qr.png">
-                      Скачать QR (PNG)
-                    </a>
-                  </>
-                ) : (
-                  <p className="cabinet-card__hint">Формирование QR…</p>
-                )}
-              </div>
-            </div>
+            ))}
           </div>
-        ) : (
-          <p className="cabinet-card__hint" style={{ marginTop: "0.75rem" }}>
-            Нажмите кнопку выше, чтобы получить ссылку и QR. В демо ответ формируется на фронте; после подключения
-            Kotlin-бэкенда здесь будут реальный токен и политика отзыва.
-          </p>
-        )}
+        </div>
+
+        <div className="cabinet-card">
+          <h2 className="cabinet-card__title">QR-код</h2>
+          {!selectedLink ? (
+            <p className="cabinet-card__hint">Выберите или создайте ссылку.</p>
+          ) : (
+            <>
+              <div className="cabinet-mock student-cabinet-issued__url">{selectedLink.verificationUrl}</div>
+              <div className="cabinet-actions" style={{ marginTop: "0.7rem" }}>
+                <button type="button" className="btn btn--secondary" onClick={() => void copyLink()}>
+                  Копировать ссылку
+                </button>
+              </div>
+              {copyHint ? (
+                <p className="cabinet-card__hint" role="status">
+                  {copyHint}
+                </p>
+              ) : null}
+              {qrDataUrl ? (
+                <div className="student-cabinet-qr__styled">
+                  <div className="student-cabinet-qr__frame">
+                    <img src={qrDataUrl} width={240} height={240} alt="QR-код проверки диплома" />
+                  </div>
+                  <a className="btn btn--secondary student-cabinet-qr__dl" href={qrDataUrl} download="student-diploma-qr.png">
+                    Скачать QR (PNG)
+                  </a>
+                </div>
+              ) : (
+                <p className="cabinet-card__hint">Формирование QR…</p>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </CabinetShell>
   );

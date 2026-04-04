@@ -7,13 +7,13 @@ import AuthShell from "../components/AuthShell.jsx";
 import { useSubmitRipple } from "../hooks/useSubmitRipple.js";
 
 const ROLES = [
-  { id: "student", label: "Студент", tabId: "tab-forgot-student" },
+  { id: "student", label: "Выпускник", tabId: "tab-forgot-student" },
   { id: "employer", label: "HR работодатель", tabId: "tab-forgot-employer" },
 ];
 
 const ROLE_COPY = {
-  student: "Укажите email или логин, привязанный к аккаунту студента.",
-  employer: "Укажите email или логин корпоративного доступа работодателя.",
+  student: "Укажите email, который вы использовали при регистрации.",
+  employer: "Укажите email, который вы использовали при регистрации.",
 };
 
 export default function ForgotPasswordPage() {
@@ -59,7 +59,7 @@ export default function ForgotPasswordPage() {
     const fd = new FormData(e.currentTarget);
     const email = fd.get("email")?.toString().trim();
     if (!email) {
-      setError("Введите email или логин.");
+      setError("Введите email.");
       return;
     }
     try {
@@ -81,11 +81,7 @@ export default function ForgotPasswordPage() {
           Восстановление пароля
         </h1>
         <p className="auth-subtitle">
-          Мы отправим ссылку для сброса пароля на адрес, указанный при регистрации. Представители ВУЗов используют{" "}
-          <Link to="/login/vuz/forgot-password" className="auth-subtitle__link">
-            отдельную форму
-          </Link>
-          .
+          Мы отправим ссылку для сброса пароля на адрес, указанный при регистрации.
         </p>
 
         {done ? (
@@ -134,7 +130,7 @@ export default function ForgotPasswordPage() {
 
             <form className="auth-form" onSubmit={onSubmit} noValidate>
               <label className="field">
-                <span className="field__label">Email или логин</span>
+                <span className="field__label">Email</span>
                 <input
                   type="text"
                   name="email"
@@ -160,7 +156,7 @@ export default function ForgotPasswordPage() {
           </>
         )}
 
-        <p className="footer-note">Не приходит письмо? Проверьте адрес и обратитесь к администратору организации.</p>
+        <p className="footer-note">Не приходит письмо? Проверьте адрес электронной почты или обратитесь в поддержку</p>
       </section>
     </AuthShell>
   );

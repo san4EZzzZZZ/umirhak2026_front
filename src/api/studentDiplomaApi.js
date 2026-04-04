@@ -1,75 +1,99 @@
-/**
- * Кабинет студента: запись о дипломе, поиск по реестру, выпуск ссылки/QR с TTL.
- *
- * Kotlin:
- * - GET  /api/v1/student/me/diploma-record
- * - GET/POST поиск по номеру диплома / ФИО (по спецификации бэкенда)
- * - POST /api/v1/student/verification-links  — { ttlHours?: number }
- */
+import { kotlinFetch } from "./config.js";
 
-import { API_BASE_URL, kotlinApiHeaders } from "./config.js";
+const AUTH_STORAGE_KEY = "diasoft_auth";
 
-const DEMO_DIPLOMA_RECORD = {
-  status: "CONFIRMED",
-  universityName: "демо-университет",
-  graduationYear: 2025,
-  program: "Прикладная информатика",
-  documentType: "Диплом бакалавра",
-  diplomaNumber: "ДБ-2025-004921",
-  holderFullName: "Петрова Анна Сергеевна",
-};
-
-export async function getMyDiplomaRecord() {
-  void API_BASE_URL;
-  void kotlinApiHeaders;
-  return Promise.resolve({ ...DEMO_DIPLOMA_RECORD });
+function getCurrentAuthLogin() {
+  try {
+    const localRaw = localStorage.getItem(AUTH_STORAGE_KEY);
+    if (localRaw) {
+      const localData = JSON.parse(localRaw);
+      if (typeof localData?.login === "string" && localData.login.trim()) {
+        return localData.login.trim();
+      }
+    }
+    const sessionRaw = sessionStorage.getItem(AUTH_STORAGE_KEY);
+    if (sessionRaw) {
+      const sessionData = JSON.parse(sessionRaw);
+      if (typeof sessionData?.login === "string" && sessionData.login.trim()) {
+        return sessionData.login.trim();
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return "";
 }
 
-/**
- * Поиск своей записи по номеру диплома или ФИО (демо: совпадение с макетной записью).
- * @param {string} query
- * @returns {Promise<{ found: true, record: typeof DEMO_DIPLOMA_RECORD } | { found: false, reason: 'empty' | 'not_found' }>}
- */
-export async function findSelfInRegistry(query) {
-  void API_BASE_URL;
-  void kotlinApiHeaders;
-  const q = String(query).trim().toLowerCase().replace(/\s+/g, " ");
-  await new Promise((r) => setTimeout(r, 320));
-  if (!q) {
-    return { found: false, reason: "empty" };
+async function readJsonOrThrow(res, defaultMessage) {
+  if (res.ok) return res.json();
+  let errorMessage = defaultMessage;
+  try {
+    const payload = await res.json();
+    if (typeof payload?.error === "string" && payload.error.trim()) {
+      errorMessage = payload.error.trim();
+    }
+  } catch {
+    // ignore
   }
-  const compact = q.replace(/\s/g, "");
-  const numMatch =
-    compact.includes("дб-2025") ||
-    compact.includes("db-2025") ||
-    q.includes("004921") ||
-    q.includes("2025-004921");
-  const fioMatch =
-    q.includes("петров") ||
-    q.includes("анна") ||
-    q.includes("петрова анна") ||
-    q.includes("anna") ||
-    q.includes("petrov");
-  if (numMatch || fioMatch) {
-    return { found: true, record: { ...DEMO_DIPLOMA_RECORD } };
-  }
-  return { found: false, reason: "not_found" };
+  throw new Error(errorMessage);
 }
 
-/** @param {{ ttlHours?: number }} [opts] */
-export async function issueVerificationLink(opts) {
-  void API_BASE_URL;
-  void kotlinApiHeaders;
-  const part = () => Math.random().toString(36).slice(2, 10);
-  const token = `verify_${part()}${part()}`;
-  const ttlHours = opts?.ttlHours ?? 72;
-  const issuedAt = new Date();
-  const expiresAt = new Date(issuedAt.getTime() + ttlHours * 3600 * 1000);
-  return Promise.resolve({
-    token,
-    verificationUrl: `${typeof window !== "undefined" ? window.location.origin : ""}/verify/${token}`,
-    ttlHours,
-    issuedAt: issuedAt.toISOString(),
-    expiresAt: expiresAt.toISOString(),
+export async function checkDiplomaForCurrentStudent(payload) {
+  const login = getCurrentAuthLogin();
+  if (!login) {
+    throw new Error("Не найден активный аккаунт выпускника.");
+  }
+  const body = {
+    universityCode: String(payload.universityCode ?? "").trim(),
+    diplomaNumber: String(payload.diplomaNumber ?? "").trim(),
+    graduationYear: Number(payload.graduationYear),
+    specialty: String(payload.specialty ?? "").trim(),
+  };
+  const res = await kotlinFetch(`/api/v1/student/registry/diploma-check?login=${encodeURIComponent(login)}`, {
+    method: "POST",
+    body: JSON.stringify(body),
   });
+  return readJsonOrThrow(res, "Не удалось проверить диплом.");
+}
+
+export async function createStudentVerificationLink(payload) {
+  const login = getCurrentAuthLogin();
+  if (!login) {
+    throw new Error("Не найден активный аккаунт выпускника.");
+  }
+  const body = {
+    universityCode: String(payload.universityCode ?? "").trim(),
+    diplomaNumber: String(payload.diplomaNumber ?? "").trim(),
+    ttlHours: Number(payload.ttlHours ?? 72),
+  };
+  const res = await kotlinFetch(`/api/v1/student/registry/verification-links?login=${encodeURIComponent(login)}`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+  return readJsonOrThrow(res, "Не удалось выпустить QR-ссылку.");
+}
+
+export async function listStudentVerificationLinks() {
+  const login = getCurrentAuthLogin();
+  if (!login) {
+    return [];
+  }
+  const res = await kotlinFetch(`/api/v1/student/registry/verification-links?login=${encodeURIComponent(login)}`);
+  const data = await readJsonOrThrow(res, "Не удалось загрузить список QR-ссылок.");
+  return Array.isArray(data) ? data : [];
+}
+
+export async function revokeStudentVerificationLink(token) {
+  const login = getCurrentAuthLogin();
+  if (!login) {
+    throw new Error("Не найден активный аккаунт выпускника.");
+  }
+  const safeToken = String(token ?? "").trim();
+  if (!safeToken) return { revoked: false };
+  const res = await kotlinFetch(
+    `/api/v1/student/registry/verification-links/${encodeURIComponent(safeToken)}/revoke?login=${encodeURIComponent(login)}`,
+    { method: "POST" }
+  );
+  const data = await readJsonOrThrow(res, "Не удалось деактивировать QR-ссылку.");
+  return { revoked: Boolean(data?.revoked) };
 }

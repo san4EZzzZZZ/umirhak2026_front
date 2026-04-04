@@ -735,3 +735,87 @@ select.cabinet-field__input {
   display: inline-flex;
   text-decoration: none;
 }
+
+.student-step-result {
+  margin-top: 0.75rem;
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.85rem 0.95rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.student-step-result--ok {
+  background: rgba(0, 242, 255, 0.08);
+  border-color: rgba(0, 242, 255, 0.32);
+}
+
+.student-step-result--wait {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.student-step-result__icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.96);
+  background: linear-gradient(135deg, rgba(0, 242, 255, 0.75), rgba(123, 44, 191, 0.8));
+  flex: 0 0 auto;
+}
+
+.student-step-result__title {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.student-links-list {
+  margin-top: 0.8rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.student-link-card {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 0.75rem 0.8rem;
+  background: rgba(0, 0, 0, 0.22);
+  cursor: pointer;
+}
+
+.student-link-card.is-active {
+  border-color: rgba(0, 242, 255, 0.45);
+  box-shadow: 0 0 0 1px rgba(0, 242, 255, 0.2) inset;
+}
+
+.student-link-card__status {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: rgba(0, 242, 255, 0.9);
+}
+
+.student-link-card__meta {
+  margin: 0.35rem 0 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.student-link-card__revoke.btn {
+  margin-top: 0.6rem;
+  min-width: 0;
+  width: auto;
+  padding: 0.5rem 0.65rem;
+  font-size: 0.75rem;
+}
+
+.student-cabinet-qr__styled {
+  margin-top: 0.85rem;
+}
