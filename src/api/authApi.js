@@ -22,6 +22,8 @@ async function readErrorMessage(res) {
       if (/invalid credentials/i.test(raw)) return "Неверный логин или пароль.";
       if (/unsupported role/i.test(raw)) return "Выбрана неподдерживаемая роль.";
       if (/login and password are required/i.test(raw)) return "Введите логин и пароль.";
+      if (/already exists/i.test(raw) || /уже существует/i.test(raw)) return "Аккаунт с таким email уже существует.";
+      if (/пароли не совпадают/i.test(raw) || /passwords do not match/i.test(raw)) return "Пароли не совпадают.";
       return raw;
     }
   } catch {
@@ -55,6 +57,42 @@ export async function login(credentials) {
     }
     throw new Error("Ошибка авторизации.");
   }
+}
+
+async function registerByRole(role, payload) {
+  const endpoint = role === "student" ? "/api/v1/students/register" : "/api/v1/hr/register";
+  try {
+    const res = await kotlinFetch(endpoint, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      throw new Error(await readErrorMessage(res));
+    }
+    return res.json();
+  } catch (error) {
+    if (error instanceof Error) {
+      if (/failed to fetch|networkerror|load failed/i.test(error.message)) {
+        throw new Error("Не удалось подключиться к серверу авторизации.");
+      }
+      throw error;
+    }
+    throw new Error("Ошибка регистрации.");
+  }
+}
+
+/**
+ * @param {{ email: string, fullName: string, password: string, confirmPassword?: string }} payload
+ */
+export async function registerStudent(payload) {
+  return registerByRole("student", payload);
+}
+
+/**
+ * @param {{ email: string, fullName: string, password: string, confirmPassword?: string }} payload
+ */
+export async function registerEmployer(payload) {
+  return registerByRole("employer", payload);
 }
 
 export async function logout() {

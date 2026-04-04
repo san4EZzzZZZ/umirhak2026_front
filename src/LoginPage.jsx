@@ -1,6 +1,6 @@
 /** Вход студент/HR через Kotlin API: src/api/authApi.js */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import * as authApi from "./api/authApi.js";
 import { useAuth } from "./auth/AuthContext.jsx";
 import { cabinetPathForRole } from "./auth/authPaths.js";
@@ -11,8 +11,8 @@ import { toSessionProfileFromFullName } from "./auth/sessionProfile.js";
 import { useSubmitRipple } from "./hooks/useSubmitRipple.js";
 
 const ROLES = [
-  { id: "student", label: "Студент", tabId: "tab-student" },
-  { id: "employer", label: "HR работодатель", tabId: "tab-employer" },
+  { id: "student", label: "Студент", tabId: "tab-student", registerPath: "/register/student" },
+  { id: "employer", label: "HR работодатель", tabId: "tab-employer", registerPath: "/register/hr" },
 ];
 
 const ROLE_COPY = {
@@ -23,9 +23,12 @@ const ROLE_COPY = {
 export default function LoginPage() {
   const [activeRole, setActiveRole] = useState("student");
   const [authError, setAuthError] = useState(null);
+  const [authSuccess, setAuthSuccess] = useState(null);
+  const [loginValue, setLoginValue] = useState("");
   const { rippling, triggerRipple } = useSubmitRipple();
   const { user, signIn } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const tabRefs = useRef([]);
 
   useEffect(() => {
@@ -35,6 +38,26 @@ export default function LoginPage() {
   useEffect(() => {
     setAuthError(null);
   }, [activeRole]);
+
+  useEffect(() => {
+    const registered = searchParams.get("registered");
+    const roleFromUrl = searchParams.get("role");
+    const loginFromUrl = searchParams.get("login");
+
+    if (roleFromUrl === "student" || roleFromUrl === "employer" || roleFromUrl === "hr") {
+      setActiveRole(roleFromUrl === "hr" ? "employer" : roleFromUrl);
+    }
+    if (loginFromUrl) {
+      setLoginValue(loginFromUrl);
+    }
+
+    if (registered === "1") {
+      setAuthSuccess("Регистрация прошла успешно. Войдите под своими данными.");
+      const next = new URLSearchParams(searchParams);
+      next.delete("registered");
+      setSearchParams(next, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   const focusTab = useCallback((index) => {
     tabRefs.current[index]?.focus();
@@ -57,8 +80,9 @@ export default function LoginPage() {
   const onSubmit = async (e) => {
     e.preventDefault();
     setAuthError(null);
+    setAuthSuccess(null);
     const fd = new FormData(e.currentTarget);
-    const login = fd.get("login")?.toString().trim();
+    const login = loginValue.trim();
     const password = fd.get("password")?.toString() ?? "";
     if (!login && !password) {
       setAuthError("Введите логин и пароль.");
@@ -92,6 +116,8 @@ export default function LoginPage() {
     });
     navigate(cabinetPathForRole(authResult?.role ?? activeRole));
   };
+
+  const registerPath = ROLES.find((r) => r.id === activeRole)?.registerPath ?? "/register/student";
 
   return (
     <AuthShell>
@@ -147,6 +173,7 @@ export default function LoginPage() {
         >
           {authError ?? ""}
         </p>
+        {authSuccess ? <p className="auth-success">{authSuccess}</p> : null}
 
         <form className="auth-form" onSubmit={onSubmit} noValidate>
           <input type="hidden" name="role" value={activeRole} />
@@ -154,12 +181,14 @@ export default function LoginPage() {
           <label className="field">
             <span className="field__label">Email или логин</span>
             <input
-              type="text"
+              type="email"
               name="login"
               autoComplete="username"
               required
               placeholder={activeRole === "student" ? "student@mail.ru" : "hr@company.ru"}
               className="field__input"
+              value={loginValue}
+              onChange={(ev) => setLoginValue(ev.target.value)}
             />
           </label>
           <PasswordField
@@ -186,6 +215,12 @@ export default function LoginPage() {
             <span className="btn__label">Войти</span>
           </button>
         </form>
+
+        <p className="auth-crosslink">
+          <Link to={registerPath} className="link-muted">
+            Нет аккаунта? Зарегистрироваться
+          </Link>
+        </p>
 
         <DemoCredentialsPanel />
 

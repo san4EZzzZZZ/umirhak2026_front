@@ -17,6 +17,7 @@ import AdminForgotPasswordPage from "./pages/AdminForgotPasswordPage.jsx";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage.jsx";
 import ResetPasswordPage from "./pages/ResetPasswordPage.jsx";
 import UniversityForgotPasswordPage from "./pages/UniversityForgotPasswordPage.jsx";
+import RegisterByRolePage from "./pages/RegisterByRolePage.jsx";
 
 export default function App() {
   return (
@@ -26,6 +27,8 @@ export default function App() {
           <Route element={<PageTransitionLayout />}>
             <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/register/student" element={<RegisterByRolePage role={ROLES.student} />} />
+            <Route path="/register/hr" element={<RegisterByRolePage role={ROLES.employer} />} />
             <Route path="/login/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/login/reset-password" element={<ResetPasswordPage />} />
             <Route path="/login/vuz" element={<UniversityLoginPage />} />
