@@ -1,5 +1,8 @@
 import { Link } from "react-router-dom";
 import AuthShell from "../components/AuthShell.jsx";
+import LandingQrVerifyDemo from "../components/LandingQrVerifyDemo.jsx";
+import { useAuth } from "../auth/AuthContext.jsx";
+import { ROLE_LABELS, cabinetPathForRole } from "../auth/authPaths.js";
 import "./home.css";
 
 const STATS = [
@@ -88,6 +91,9 @@ const AUDIENCE = [
 ];
 
 export default function HomePage() {
+  const { user } = useAuth();
+  const cabinetPath = user ? cabinetPathForRole(user.role) : "/login";
+
   const nav = (
     <nav className="top-bar__nav" aria-label="Основная навигация">
       <a href="#benefits" className="top-bar__nav-link">
@@ -102,9 +108,15 @@ export default function HomePage() {
       <Link to="/login/vuz" className="top-bar__nav-link top-bar__nav-link--muted">
         Вузам
       </Link>
-      <Link to="/login" className="top-bar__nav-cta">
-        Войти
-      </Link>
+      {user ? (
+        <Link to={cabinetPath} className="top-bar__nav-cta top-bar__nav-cta--cabinet">
+          Личный кабинет
+        </Link>
+      ) : (
+        <Link to="/login" className="top-bar__nav-cta">
+          Войти
+        </Link>
+      )}
     </nav>
   );
 
@@ -122,14 +134,41 @@ export default function HomePage() {
                 Платформа для вузов, выпускников и работодателей: подписанные реестры, QR и ограниченные по времени ссылки,
                 прозрачный статус документа там, где принимаются кадровые решения.
               </p>
-              <div className="landing-hero__actions">
-                <Link to="/login/vuz" className="btn btn--primary landing-hero__btn">
-                  <span className="btn__shine" aria-hidden="true" />
-                  <span className="btn__label">Подключить вуз</span>
-                </Link>
-                <Link to="/login" className="btn btn--secondary landing-hero__btn">
-                  <span className="btn__label">Выпускник или HR</span>
-                </Link>
+              <div className={`landing-hero__actions${user ? " landing-hero__actions--with-session" : ""}`}>
+                {user ? (
+                  <>
+                    <Link to={cabinetPath} className="landing-cabinet-callout">
+                      <span className="landing-cabinet-callout__aurora" aria-hidden="true" />
+                      <span className="landing-cabinet-callout__body">
+                        <span className="landing-cabinet-callout__eyebrow">С возвращением</span>
+                        <span className="landing-cabinet-callout__role">{ROLE_LABELS[user.role] ?? user.role}</span>
+                        {user.lastName || user.firstName ? (
+                          <span className="landing-cabinet-callout__name">
+                            {[user.lastName, user.firstName].filter(Boolean).join(" ")}
+                          </span>
+                        ) : null}
+                        <span className="landing-cabinet-callout__login">{user.login}</span>
+                        <span className="landing-cabinet-callout__cta">
+                          Открыть личный кабинет
+                          <span className="landing-cabinet-callout__cta-arrow" aria-hidden="true">
+                            →
+                          </span>
+                        </span>
+                      </span>
+                    </Link>
+                    <p className="landing-hero__session-hint">Ниже — преимущества и сценарии платформы</p>
+                  </>
+                ) : (
+                  <>
+                    <Link to="/login/vuz" className="btn btn--primary landing-hero__btn">
+                      <span className="btn__shine" aria-hidden="true" />
+                      <span className="btn__label">Подключить вуз</span>
+                    </Link>
+                    <Link to="/login" className="btn btn--secondary landing-hero__btn">
+                      <span className="btn__label">Выпускник или HR</span>
+                    </Link>
+                  </>
+                )}
               </div>
               <ul className="landing-hero__chips" aria-label="Ключевые возможности">
                 <li>Электронная подпись пакетов</li>
@@ -137,16 +176,8 @@ export default function HomePage() {
                 <li>Отзыв и срок действия</li>
               </ul>
             </div>
-            <div className="landing-hero__visual" aria-hidden="true">
-              <div className="landing-hero__glow" />
-              <div className="landing-hero__card">
-                <p className="landing-hero__card-label">Проверка</p>
-                <div className="landing-hero__card-qr" />
-                <div className="landing-hero__card-row">
-                  <span className="landing-hero__pill landing-hero__pill--ok">Подлинность подтверждена</span>
-                  <span className="landing-hero__pill">Реестр ВУЗа</span>
-                </div>
-              </div>
+            <div className="landing-hero__visual">
+              <LandingQrVerifyDemo />
             </div>
           </div>
         </section>
@@ -226,19 +257,30 @@ export default function HomePage() {
         <section className="landing-cta" aria-labelledby="landing-cta-title">
           <div className="landing-cta__inner">
             <h2 id="landing-cta-title" className="landing-cta__title">
-              Готовы сократить путь от диплома до проверки?
+              {user ? "Продолжить работу в кабинете?" : "Готовы сократить путь от диплома до проверки?"}
             </h2>
             <p className="landing-cta__text">
-              Выберите роль и войдите в демо-кабинет — интерфейс можно адаптировать под процессы вашей организации.
+              {user
+                ? "Вы уже вошли в систему — откройте свой кабинет или изучите материалы на странице."
+                : "Выберите роль и войдите в демо-кабинет — интерфейс можно адаптировать под процессы вашей организации."}
             </p>
             <div className="landing-cta__actions">
-              <Link to="/login/vuz" className="btn btn--primary landing-cta__btn">
-                <span className="btn__shine" aria-hidden="true" />
-                <span className="btn__label">Начать с вуза</span>
-              </Link>
-              <Link to="/login" className="btn btn--secondary landing-cta__btn">
-                <span className="btn__label">Войти как студент или HR</span>
-              </Link>
+              {user ? (
+                <Link to={cabinetPath} className="btn btn--primary landing-cta__btn landing-cta__btn--cabinet">
+                  <span className="btn__shine" aria-hidden="true" />
+                  <span className="btn__label">Перейти в личный кабинет</span>
+                </Link>
+              ) : (
+                <>
+                  <Link to="/login/vuz" className="btn btn--primary landing-cta__btn">
+                    <span className="btn__shine" aria-hidden="true" />
+                    <span className="btn__label">Начать с вуза</span>
+                  </Link>
+                  <Link to="/login" className="btn btn--secondary landing-cta__btn">
+                    <span className="btn__label">Войти как студент или HR</span>
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </section>

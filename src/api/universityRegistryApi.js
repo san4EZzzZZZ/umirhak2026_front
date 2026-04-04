@@ -49,3 +49,75 @@ export async function signRegistryPackage(packageId) {
   void packageId;
   return Promise.resolve({ ok: true });
 }
+
+/* ——— Записи реестра дипломов (демо: localStorage; Kotlin: CRUD по реестру) ——— */
+
+const DIPLOMA_STORAGE_KEY = "diasoft_vuz_diplomas_stub";
+
+/**
+ * @typedef {{ id: string, fullName: string, year: number, specialty: string, diplomaNumber: string, createdAt: string }} DiplomaRecordDto
+ */
+
+function readDiplomas() {
+  try {
+    const raw = localStorage.getItem(DIPLOMA_STORAGE_KEY);
+    if (!raw) return [];
+    const data = JSON.parse(raw);
+    return Array.isArray(data?.records) ? data.records : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeDiplomas(records) {
+  localStorage.setItem(DIPLOMA_STORAGE_KEY, JSON.stringify({ records }));
+}
+
+/** @returns {Promise<DiplomaRecordDto[]>} */
+export async function listDiplomaRecords() {
+  void API_BASE_URL;
+  void kotlinApiHeaders;
+  return Promise.resolve(readDiplomas());
+}
+
+/**
+ * @param {{ fullName: string, year: number, specialty: string, diplomaNumber: string }} payload
+ * @returns {Promise<DiplomaRecordDto>}
+ */
+export async function addDiplomaRecord(payload) {
+  void API_BASE_URL;
+  void kotlinApiHeaders;
+  const records = readDiplomas();
+  const row = {
+    id: `dip-${Date.now()}`,
+    fullName: String(payload.fullName).trim(),
+    year: Number(payload.year),
+    specialty: String(payload.specialty).trim(),
+    diplomaNumber: String(payload.diplomaNumber).trim(),
+    createdAt: new Date().toISOString(),
+  };
+  records.unshift(row);
+  writeDiplomas(records);
+  return Promise.resolve(row);
+}
+
+/**
+ * @param {{ fullName: string, year: number, specialty: string, diplomaNumber: string }[]} rows
+ * @returns {Promise<{ added: number }>}
+ */
+export async function addDiplomaRecordsBulk(rows) {
+  void API_BASE_URL;
+  void kotlinApiHeaders;
+  const existing = readDiplomas();
+  const base = Date.now();
+  const newOnes = rows.map((r, i) => ({
+    id: `dip-${base}-${i}`,
+    fullName: String(r.fullName).trim(),
+    year: Number(r.year),
+    specialty: String(r.specialty).trim(),
+    diplomaNumber: String(r.diplomaNumber).trim(),
+    createdAt: new Date().toISOString(),
+  }));
+  writeDiplomas([...newOnes, ...existing]);
+  return Promise.resolve({ added: newOnes.length });
+}
