@@ -29,7 +29,7 @@ export default function CabinetShell({ badge, title, subtitle, children }) {
       <header className="top-bar top-bar--cabinet">
         <Link className="brand" to="/" aria-label="На главную">
           <span className="brand__mark">
-            <img src={logoSvg} alt="" className="brand__logo" width="135" height="32" />
+            <img src={logoSvg} alt="" className="brand__logo" width="203" height="48" />
           </span>
         </Link>
 
