@@ -1,66 +1,6 @@
-/**
- * Кабинет ВУЗа: статистика дашборда и записи реестра дипломов.
- *
- * Kotlin (пример):
- * - GET /api/v1/university/registry/dashboard
- * - CRUD дипломов — по договорённости (см. addDiplomaRecord и т.д.)
- * - Аннулирование по номеру — например DELETE /api/v1/university/diplomas/by-number?number=...
- */
-
 import { kotlinFetch } from "./config.js";
 
 const AUTH_STORAGE_KEY = "diasoft_auth";
-
-export async function getRegistryDashboardStats() {
-  try {
-    const login = getCurrentAuthLogin();
-    if (!login) {
-      return { pendingSignature: 0, inRegistry: 0 };
-    }
-
-    const res = await kotlinFetch(`/api/v1/university/registry/dashboard?login=${encodeURIComponent(login)}`);
-    if (!res.ok) {
-      throw new Error(`Не удалось загрузить статистику реестра (HTTP ${res.status})`);
-    }
-    const data = await res.json();
-    return {
-      pendingSignature: Number(data?.pendingSignature ?? 0),
-      inRegistry: Number(data?.inRegistry ?? 0),
-    };
-  } catch {
-    return { pendingSignature: 0, inRegistry: 0 };
-  }
-}
-
-/* ——— Записи реестра дипломов (демо: localStorage; Kotlin: CRUD по реестру) ——— */
-
-const DIPLOMA_STORAGE_KEY = "diasoft_vuz_diplomas_stub";
-
-/**
- * @typedef {{
- *   id: string,
- *   fullName: string,
- *   year: number,
- *   specialty: string,
- *   diplomaNumber: string,
- *   createdAt: string,
- *   signedAt?: string,
- *   signatureBase64?: string,
- *   capAlgorithm?: string,
- *   signingKeyThumbprint?: string,
- * }} DiplomaRecordDto
- */
-
-function readDiplomas() {
-  try {
-    const raw = localStorage.getItem(DIPLOMA_STORAGE_KEY);
-    if (!raw) return [];
-    const data = JSON.parse(raw);
-    return Array.isArray(data?.records) ? data.records : [];
-  } catch {
-    return [];
-  }
-}
 
 function getCurrentAuthLogin() {
   try {
@@ -84,113 +24,123 @@ function getCurrentAuthLogin() {
   return "";
 }
 
-function writeDiplomas(records) {
-  localStorage.setItem(DIPLOMA_STORAGE_KEY, JSON.stringify({ records }));
+async function readJsonOrThrow(res, defaultMessage) {
+  if (res.ok) {
+    return res.json();
+  }
+  let errorMessage = defaultMessage;
+  try {
+    const payload = await res.json();
+    if (typeof payload?.error === "string" && payload.error.trim()) {
+      errorMessage = payload.error.trim();
+    }
+  } catch {
+    // ignore
+  }
+  throw new Error(errorMessage);
 }
 
-/** @returns {Promise<DiplomaRecordDto[]>} */
+function mapRowToBackend(row) {
+  return {
+    fullName: String(row.fullName ?? "").trim(),
+    specialty: String(row.specialty ?? "").trim(),
+    diplomaCode: String(row.diplomaNumber ?? "").trim(),
+    graduationYear: Number(row.year),
+  };
+}
+
+function mapDtoToUi(row) {
+  return {
+    id: row.id,
+    fullName: row.fullName,
+    specialty: row.specialty,
+    year: Number(row.graduationYear),
+    diplomaNumber: row.diplomaNumber,
+    createdAt: row.createdAt,
+    status: row.status,
+  };
+}
+
+export async function getRegistryDashboardStats() {
+  try {
+    const login = getCurrentAuthLogin();
+    if (!login) {
+      return { pendingSignature: 0, inRegistry: 0 };
+    }
+
+    const res = await kotlinFetch(`/api/v1/university/registry/dashboard?login=${encodeURIComponent(login)}`);
+    const data = await readJsonOrThrow(res, "Не удалось загрузить статистику реестра.");
+    return {
+      pendingSignature: Number(data?.pendingSignature ?? 0),
+      inRegistry: Number(data?.inRegistry ?? 0),
+    };
+  } catch {
+    return { pendingSignature: 0, inRegistry: 0 };
+  }
+}
+
 export async function listDiplomaRecords() {
-  void API_BASE_URL;
-  void kotlinApiHeaders;
-  return Promise.resolve(readDiplomas());
+  const login = getCurrentAuthLogin();
+  if (!login) return [];
+  const res = await kotlinFetch(`/api/v1/university/registry/diplomas?login=${encodeURIComponent(login)}`);
+  const data = await readJsonOrThrow(res, "Не удалось получить список дипломов.");
+  return Array.isArray(data) ? data.map(mapDtoToUi) : [];
 }
 
-/**
- * @param {{ fullName: string, year: number, specialty: string, diplomaNumber: string }} payload
- * @returns {Promise<DiplomaRecordDto>}
- */
-export async function addDiplomaRecord(payload) {
-  void API_BASE_URL;
-  void kotlinApiHeaders;
-  const records = readDiplomas();
-  const row = {
-    id: `dip-${Date.now()}`,
-    fullName: String(payload.fullName).trim(),
-    year: Number(payload.year),
-    specialty: String(payload.specialty).trim(),
-    diplomaNumber: String(payload.diplomaNumber).trim(),
-    createdAt: new Date().toISOString(),
-  };
-  records.unshift(row);
-  writeDiplomas(records);
-  return Promise.resolve(row);
-}
-
-/**
- * @param {{ fullName: string, year: number, specialty: string, diplomaNumber: string }[]} rows
- * @returns {Promise<{ added: number }>}
- */
 export async function addDiplomaRecordsBulk(rows) {
-  void API_BASE_URL;
-  void kotlinApiHeaders;
-  const existing = readDiplomas();
-  const base = Date.now();
-  const newOnes = rows.map((r, i) => ({
-    id: `dip-${base}-${i}`,
-    fullName: String(r.fullName).trim(),
-    year: Number(r.year),
-    specialty: String(r.specialty).trim(),
-    diplomaNumber: String(r.diplomaNumber).trim(),
-    createdAt: new Date().toISOString(),
-  }));
-  writeDiplomas([...newOnes, ...existing]);
-  return Promise.resolve({ added: newOnes.length });
+  const login = getCurrentAuthLogin();
+  if (!login) {
+    throw new Error("Не найден активный пользователь ВУЗа.");
+  }
+  const payload = rows.map(mapRowToBackend);
+  const res = await kotlinFetch(`/api/v1/university/registry/diplomas/bulk?login=${encodeURIComponent(login)}`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  const data = await readJsonOrThrow(res, "Не удалось загрузить дипломы в реестр.");
+  return { added: Number(data?.added ?? payload.length) };
 }
 
-/**
- * Удаляет запись реестра по номеру диплома (без учёта регистра и лишних пробелов по краям).
- * @param {string} diplomaNumber
- * @returns {Promise<{ removed: boolean, record?: DiplomaRecordDto }>}
- */
 export async function annulDiplomaByNumber(diplomaNumber) {
-  void API_BASE_URL;
-  void kotlinApiHeaders;
-  const q = String(diplomaNumber ?? "").trim().toLowerCase();
-  if (!q) {
-    return Promise.resolve({ removed: false });
+  const login = getCurrentAuthLogin();
+  if (!login) {
+    throw new Error("Не найден активный пользователь ВУЗа.");
   }
-  const records = readDiplomas();
-  const idx = records.findIndex((r) => String(r.diplomaNumber ?? "").trim().toLowerCase() === q);
-  if (idx === -1) {
-    return Promise.resolve({ removed: false });
+  const number = String(diplomaNumber ?? "").trim();
+  if (!number) {
+    return { removed: false };
   }
-  const [removed] = records.splice(idx, 1);
-  writeDiplomas(records);
-  return Promise.resolve({ removed: true, record: removed });
+  const res = await kotlinFetch(
+    `/api/v1/university/registry/diplomas/revoke?login=${encodeURIComponent(login)}&diplomaNumber=${encodeURIComponent(number)}`,
+    { method: "POST" }
+  );
+  const data = await readJsonOrThrow(res, "Не удалось аннулировать диплом.");
+  return { removed: Boolean(data?.removed) };
 }
 
-/**
- * Сохраняет запись после подписи КЭП (демо: сразу в localStorage; Kotlin: после валидации подписи на сервере).
- * @param {{
- *   fullName: string,
- *   year: number,
- *   specialty: string,
- *   diplomaNumber: string,
- *   signatureBase64: string,
- *   capAlgorithm: string,
- *   signingKeyThumbprint: string,
- *   signedAt: string,
- * }} payload
- * @returns {Promise<DiplomaRecordDto>}
- */
 export async function commitSignedDiplomaRecord(payload) {
-  void API_BASE_URL;
-  void kotlinApiHeaders;
-  const records = readDiplomas();
-  const createdAt = new Date().toISOString();
-  const row = {
-    id: `dip-${Date.now()}`,
-    fullName: String(payload.fullName).trim(),
-    year: Number(payload.year),
-    specialty: String(payload.specialty).trim(),
-    diplomaNumber: String(payload.diplomaNumber).trim(),
-    createdAt,
-    signedAt: payload.signedAt,
-    signatureBase64: payload.signatureBase64,
-    capAlgorithm: payload.capAlgorithm,
-    signingKeyThumbprint: payload.signingKeyThumbprint,
+  const login = getCurrentAuthLogin();
+  if (!login) {
+    throw new Error("Не найден активный пользователь ВУЗа.");
+  }
+  const body = {
+    fullName: String(payload.fullName ?? "").trim(),
+    specialty: String(payload.specialty ?? "").trim(),
+    diplomaCode: String(payload.diplomaNumber ?? "").trim(),
+    graduationYear: Number(payload.year),
+    privateKeyHash: String(payload.privateKeyHash ?? "").trim().toLowerCase(),
   };
-  records.unshift(row);
-  writeDiplomas(records);
-  return Promise.resolve(row);
+  const res = await kotlinFetch(`/api/v1/university/registry/diplomas?login=${encodeURIComponent(login)}`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+  await readJsonOrThrow(res, "Не удалось сохранить подписанный диплом в реестр.");
+  return {
+    id: "",
+    fullName: body.fullName,
+    specialty: body.specialty,
+    year: body.graduationYear,
+    diplomaNumber: body.diplomaCode,
+    createdAt: new Date().toISOString(),
+  };
 }

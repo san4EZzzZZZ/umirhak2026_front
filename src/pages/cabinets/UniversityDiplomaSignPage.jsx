@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import * as universityRegistryApi from "../../api/universityRegistryApi.js";
-import * as universityCapSigningApi from "../../api/universityCapSigningApi.js";
-import { getStubCapPublicThumbprintHex, signDiplomaDraftWithStubKey } from "../../utils/universityCapSignStub.js";
 import CabinetShell from "../../components/CabinetShell.jsx";
 import "./cabinet.css";
 
@@ -27,7 +25,8 @@ export default function UniversityDiplomaSignPage() {
   const location = useLocation();
   const draft = location.state?.draft;
 
-  const [thumbprint, setThumbprint] = useState("…");
+  const [privateKeyFileName, setPrivateKeyFileName] = useState("");
+  const [privateKeyHash, setPrivateKeyHash] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
 
@@ -37,42 +36,47 @@ export default function UniversityDiplomaSignPage() {
     }
   }, [draft, navigate]);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const t = await getStubCapPublicThumbprintHex();
-        if (!cancelled) setThumbprint(t);
-      } catch {
-        if (!cancelled) setThumbprint("недоступно");
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
+  const toHex = (buffer) =>
+    Array.from(new Uint8Array(buffer))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+
+  const onPrivateKeyChange = useCallback(async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      setPrivateKeyFileName("");
+      setPrivateKeyHash("");
+      return;
+    }
+    try {
+      const content = await file.text();
+      const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(content));
+      setPrivateKeyHash(toHex(digest));
+      setPrivateKeyFileName(file.name);
+      setError(null);
+    } catch {
+      setPrivateKeyFileName("");
+      setPrivateKeyHash("");
+      setError("Не удалось прочитать файл приватного ключа.");
+    }
   }, []);
 
   const onSignAndCommit = useCallback(async () => {
     if (!isValidDraft(draft)) return;
+    if (!privateKeyHash) {
+      setError("Загрузите приватный ключ КЭП.");
+      return;
+    }
     setError(null);
     setBusy(true);
     try {
-      const sig = await signDiplomaDraftWithStubKey(draft);
       const pkg = {
         fullName: draft.fullName.trim(),
         year: Number(draft.year),
         specialty: draft.specialty.trim(),
         diplomaNumber: draft.diplomaNumber.trim(),
-        signatureBase64: sig.signatureBase64,
-        capAlgorithm: sig.capAlgorithm,
-        signingKeyThumbprint: sig.signingKeyThumbprint,
-        signedAt: sig.signedAt,
+        privateKeyHash,
       };
-      const stub = await universityCapSigningApi.submitSignedDiplomaPackageStub(pkg);
-      if (!stub.accepted) {
-        setError("Бэкенд отклонил пакет подписи (заглушка).");
-        return;
-      }
       await universityRegistryApi.commitSignedDiplomaRecord(pkg);
       navigate("/cabinet/vuz", { replace: true, state: { capSignedOk: true } });
     } catch {
@@ -80,7 +84,7 @@ export default function UniversityDiplomaSignPage() {
     } finally {
       setBusy(false);
     }
-  }, [draft, navigate]);
+  }, [draft, navigate, privateKeyHash]);
 
   if (!isValidDraft(draft)) {
     return null;
@@ -90,7 +94,7 @@ export default function UniversityDiplomaSignPage() {
     <CabinetShell
       badge="Личный кабинет ВУЗа"
       title="Подпись КЭП"
-      subtitle="Демонстрация усиленной квалифицированной электронной подписи: на клиенте формируется подпись RSA-PSS (SHA-256) демо-ключом, затем пакет уходит на заглушку бэкенда и сохраняется в реестре."
+      subtitle="Загрузите приватный ключ КЭП: его SHA-256 хэш включается в общий хэш записи диплома перед сохранением в реестр."
     >
       <p className="cabinet-section-lead" style={{ marginTop: 0 }}>
         <Link to="/cabinet/vuz" className="cap-sign-back">
@@ -119,12 +123,30 @@ export default function UniversityDiplomaSignPage() {
           </div>
         </dl>
 
-        <h3 className="cap-sign-subtitle">Ключ подписи (демо)</h3>
+        <h3 className="cap-sign-subtitle">Приватный ключ КЭП</h3>
         <p className="cabinet-card__hint">
-          В прототипе используется зашитый тестовый закрытый ключ в коде страницы (только для стенда). В бою подпись выполняется через токен, облачную КЭП или серверное HSM — ключ не хранится в репозитории.
+          Выберите файл приватного ключа (например, `.pem`/`.key`). В систему уходит только его SHA-256 хэш.
         </p>
-        <p className="cabinet-mock" aria-label="Отпечаток открытого ключа">
-          Отпечаток (SHA-256, превью): <strong>{thumbprint}</strong>
+        <label className="cabinet-field" style={{ marginTop: "0.75rem" }}>
+          <span className="cabinet-field__label">Файл приватного ключа</span>
+          <input
+            className="cabinet-field__input"
+            type="file"
+            accept=".pem,.key,.txt,application/x-pem-file,text/plain"
+            onChange={onPrivateKeyChange}
+            disabled={busy}
+          />
+        </label>
+        <p className="cabinet-mock" aria-label="Отпечаток приватного ключа">
+          {privateKeyHash ? (
+            <>
+              Файл: <strong>{privateKeyFileName}</strong>
+              <br />
+              SHA-256: <strong>{privateKeyHash}</strong>
+            </>
+          ) : (
+            "Приватный ключ пока не загружен."
+          )}
         </p>
 
         {error ? (
