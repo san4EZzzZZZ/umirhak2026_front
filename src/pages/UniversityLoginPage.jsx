@@ -25,7 +25,18 @@ export default function UniversityLoginPage() {
     const fd = new FormData(e.currentTarget);
     const login = fd.get("login")?.toString().trim();
     const password = fd.get("password")?.toString() ?? "";
-    if (!login) return;
+    if (!login && !password) {
+      setAuthError("Введите логин и пароль.");
+      return;
+    }
+    if (!login) {
+      setAuthError("Введите логин.");
+      return;
+    }
+    if (!password) {
+      setAuthError("Введите пароль.");
+      return;
+    }
     let authResult;
     try {
       authResult = await authApi.login({ role: ROLES.university, login, password });
