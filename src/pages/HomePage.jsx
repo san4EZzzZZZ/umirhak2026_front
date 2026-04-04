@@ -5,12 +5,6 @@ import { useAuth } from "../auth/AuthContext.jsx";
 import { ROLE_LABELS, cabinetPathForRole } from "../auth/authPaths.js";
 import "./home.css";
 
-const STATS = [
-  { value: "24/7", label: "доступ к проверке статуса диплома" },
-  { value: "QR + TTL", label: "одноразовые ссылки с ограниченным сроком" },
-  { value: "ЕП + аудит", label: "подпись данных и журнал событий" },
-];
-
 const BENEFITS = [
   {
     icon: "shield",
@@ -144,8 +138,8 @@ export default function HomePage() {
                 Проверяйте образование быстро — без сомнений и лишних писем
               </h1>
               <p className="landing-hero__lead">
-                Платформа для вузов, выпускников и работодателей: подписанные реестры, QR и ограниченные по времени ссылки,
-                прозрачный статус документа там, где принимаются кадровые решения.
+                Платформа с раздельной авторизацией для ВУЗов, студентов и HR: ведение реестра дипломов, проверка по
+                номеру и QR, выпуск ссылок для подтверждения и понятный статус документа в процессе найма.
               </p>
               <div className={`landing-hero__actions${user ? " landing-hero__actions--with-session" : ""}`}>
                 {user ? (
@@ -188,17 +182,6 @@ export default function HomePage() {
               <LandingQrVerifyDemo />
             </div>
           </div>
-        </section>
-
-        <section className="landing-stats" aria-label="Возможности в цифрах">
-          <ul className="landing-stats__list">
-            {STATS.map((s) => (
-              <li key={s.label} className="landing-stats__item">
-                <span className="landing-stats__value">{s.value}</span>
-                <span className="landing-stats__label">{s.label}</span>
-              </li>
-            ))}
-          </ul>
         </section>
 
         <section id="benefits" className="landing-section landing-section--benefits">
