@@ -10,6 +10,10 @@ import { useSubmitRipple } from "../hooks/useSubmitRipple.js";
 
 export default function AdminLoginPage() {
   const [authError, setAuthError] = useState(null);
+  const [stage, setStage] = useState("credentials");
+  const [busy, setBusy] = useState(false);
+  const [code, setCode] = useState("");
+  const [pending, setPending] = useState({ login: "", password: "", persist: true });
   const { rippling, triggerRipple } = useSubmitRipple();
   const { user, signIn } = useAuth();
   const navigate = useNavigate();
@@ -18,70 +22,73 @@ export default function AdminLoginPage() {
     if (user) navigate(cabinetPathForRole(user.role), { replace: true });
   }, [user, navigate]);
 
-  const onSubmit = async (e) => {
+  const onSubmitCredentials = async (e) => {
     e.preventDefault();
     setAuthError(null);
     const fd = new FormData(e.currentTarget);
-    const login = fd.get("login")?.toString().trim();
+    const login = fd.get("login")?.toString().trim() ?? "";
     const password = fd.get("password")?.toString() ?? "";
-    if (!login && !password) {
+    const persist = fd.get("remember") === "on";
+    if (!login || !password) {
       setAuthError("Введите логин и пароль.");
       return;
     }
-    if (!login) {
-      setAuthError("Введите логин.");
-      return;
-    }
-    if (!password) {
-      setAuthError("Введите пароль.");
-      return;
-    }
 
-    let authResult = null;
-
+    setBusy(true);
     try {
-      authResult = await authApi.login({ role: ROLES.superadmin, login, password });
-    } catch (firstError) {
-      try {
-        authResult = await authApi.login({ role: ROLES.admin, login, password });
-      } catch (secondError) {
-        const message =
-          secondError instanceof Error
-            ? secondError.message
-            : firstError instanceof Error
-              ? firstError.message
-              : "Неверный логин или пароль";
-        setAuthError(message);
-        return;
-      }
+      await authApi.requestAdminLoginCode({ login, password });
+      setPending({ login, password, persist });
+      setStage("code");
+      setCode("");
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : "Не удалось отправить код.");
+    } finally {
+      setBusy(false);
     }
-    triggerRipple();
-    const persist = fd.get("remember") === "on";
-    const resolvedRole = authResult?.role ?? ROLES.admin;
-    const { firstName, lastName } = toSessionProfileFromFullName(authResult?.fullName);
-    signIn({
-      role: resolvedRole,
-      login: authResult?.login ?? login,
-      persist,
-      firstName,
-      lastName,
-    });
-    navigate(cabinetPathForRole(resolvedRole));
+  };
+
+  const onSubmitCode = async (e) => {
+    e.preventDefault();
+    setAuthError(null);
+    if (!/^\d{6}$/.test(code.trim())) {
+      setAuthError("Введите 6-значный код из письма.");
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const authResult = await authApi.loginAdminWithCode({
+        login: pending.login,
+        password: pending.password,
+        code: code.trim(),
+      });
+      triggerRipple();
+      const { firstName, lastName } = toSessionProfileFromFullName(authResult?.fullName);
+      signIn({
+        role: ROLES.admin,
+        login: authResult?.login ?? pending.login,
+        persist: pending.persist,
+        firstName,
+        lastName,
+      });
+      navigate(cabinetPathForRole(ROLES.admin));
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : "Не удалось войти.");
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
     <AuthShell>
       <section className="auth-card" aria-labelledby="auth-title-admin">
         <div className="auth-card__glow" aria-hidden="true" />
-
         <p className="auth-badge">Администратор платформы</p>
-
         <h1 id="auth-title-admin" className="auth-title">
           Вход в админ-панель
         </h1>
         <p className="auth-subtitle">
-          Обычные администраторы ведут пользователей ВУЗов. Суперпользователь дополнительно управляет списком
-          администраторов — те же учётные данные вводятся на этой странице.
+          Вход администратора выполняется в 2 шага: пароль и код подтверждения из письма.
         </p>
 
         <p
@@ -93,92 +100,91 @@ export default function AdminLoginPage() {
           {authError ?? ""}
         </p>
 
-        <form className="auth-form" onSubmit={onSubmit} noValidate>
-          <input type="hidden" name="role" value="admin" />
-
-          <label className="field">
-            <span className="field__label">Логин администратора</span>
-            <input
-              type="text"
-              name="login"
-              autoComplete="username"
-              required
-              placeholder="admin@demo.diasoft"
-              className="field__input"
-            />
-          </label>
-          <PasswordField
-            label="Пароль"
-            name="password"
-            autoComplete="current-password"
-            required
-            placeholder="••••••••"
-          />
-
-          <div className="form-row">
-            <label className="checkbox">
-              <input type="checkbox" name="remember" defaultChecked />
-              <span className="checkbox__box" aria-hidden="true" />
-              <span>Запомнить устройство (сохранять после закрытия браузера)</span>
+        {stage === "credentials" ? (
+          <form className="auth-form" onSubmit={onSubmitCredentials} noValidate>
+            <label className="field">
+              <span className="field__label">Логин администратора (email)</span>
+              <input
+                type="email"
+                name="login"
+                autoComplete="username"
+                required
+                placeholder="admin@example.com"
+                className="field__input"
+              />
             </label>
-            <Link to="/login/admin/forgot-password" className="link-muted">
-              Забыли пароль?
-            </Link>
-          </div>
+            <PasswordField
+              label="Пароль"
+              name="password"
+              autoComplete="current-password"
+              required
+              placeholder="••••••••"
+            />
 
-          <button type="submit" className={`btn btn--primary${rippling ? " is-rippling" : ""}`}>
-            <span className="btn__shine" aria-hidden="true" />
-            <span className="btn__label">Войти в админ-панель</span>
-          </button>
-        </form>
+            <div className="form-row">
+              <label className="checkbox">
+                <input type="checkbox" name="remember" defaultChecked />
+                <span className="checkbox__box" aria-hidden="true" />
+                <span>Запомнить устройство</span>
+              </label>
+              <Link to="/login/admin/forgot-password" className="link-muted">
+                Забыли пароль?
+              </Link>
+            </div>
 
-        <div className="auth-demo" aria-label="Демо-доступы админ-панели">
-          <p className="auth-demo__title">Суперпользователь (управление администраторами)</p>
-          <table className="auth-demo__table">
-            <tbody>
-              <tr>
-                <th scope="row">Логин</th>
-                <td>
-                  <code className="auth-demo__code">super@demo.diasoft</code>
-                </td>
-              </tr>
-              <tr>
-                <th scope="row">Пароль</th>
-                <td>
-                  <code className="auth-demo__code">SuperDemo2026</code>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-          <p className="auth-demo__title" style={{ marginTop: "1rem" }}>
-            Администратор (только пользователи ВУЗов)
-          </p>
-          <table className="auth-demo__table">
-            <tbody>
-              <tr>
-                <th scope="row">Логин</th>
-                <td>
-                  <code className="auth-demo__code">admin@demo.diasoft</code>
-                </td>
-              </tr>
-              <tr>
-                <th scope="row">Пароль</th>
-                <td>
-                  <code className="auth-demo__code">AdminDemo2026</code>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+            <button type="submit" className={`btn btn--primary${rippling ? " is-rippling" : ""}`} disabled={busy}>
+              <span className="btn__shine" aria-hidden="true" />
+              <span className="btn__label">{busy ? "Отправка…" : "Получить код на почту"}</span>
+            </button>
+          </form>
+        ) : (
+          <form className="auth-form" onSubmit={onSubmitCode} noValidate>
+            <p className="auth-subtitle" style={{ marginBottom: "0.35rem" }}>
+              Код отправлен на <strong>{pending.login}</strong>.
+            </p>
+            <label className="field">
+              <span className="field__label">Код из письма</span>
+              <input
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                required
+                maxLength={6}
+                placeholder="123456"
+                className="field__input"
+                value={code}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              />
+            </label>
+
+            <div className="cabinet-actions" style={{ marginTop: "0.85rem" }}>
+              <button type="submit" className={`btn btn--primary${rippling ? " is-rippling" : ""}`} disabled={busy}>
+                <span className="btn__shine" aria-hidden="true" />
+                <span className="btn__label">{busy ? "Проверка…" : "Войти в админ-панель"}</span>
+              </button>
+              <button
+                type="button"
+                className="btn btn--secondary"
+                disabled={busy}
+                onClick={() => {
+                  setStage("credentials");
+                  setCode("");
+                  setAuthError(null);
+                }}
+              >
+                <span className="btn__label">Изменить логин/пароль</span>
+              </button>
+            </div>
+          </form>
+        )}
 
         <p className="auth-crosslink">
           <Link to="/" className="link-muted">
             ← На главную
           </Link>
         </p>
-
-        <p className="footer-note">Рабочий доступ выдаётся службой безопасности платформы.</p>
       </section>
     </AuthShell>
   );
 }
+

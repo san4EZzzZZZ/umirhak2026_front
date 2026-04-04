@@ -180,11 +180,6 @@ export default function ResetPasswordPage() {
                 Вход ВУЗа
               </Link>
             </p>
-            <p className="auth-crosslink">
-              <Link to="/login/admin" className="link-muted">
-                Вход администратора
-              </Link>
-            </p>
           </>
         ) : null}
 

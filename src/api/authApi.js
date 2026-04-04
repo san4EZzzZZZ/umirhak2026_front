@@ -20,6 +20,9 @@ async function readErrorMessage(res) {
     if (typeof data?.error === "string" && data.error.trim()) {
       const raw = data.error.trim();
       if (/invalid credentials/i.test(raw)) return "Неверный логин или пароль.";
+      if (/admin login requires verification code/i.test(raw)) return "Для входа администратора нужен код из почты.";
+      if (/invalid or expired verification code/i.test(raw)) return "Неверный или просроченный код подтверждения.";
+      if (/invalid verification code/i.test(raw)) return "Код подтверждения должен состоять из 6 цифр.";
       if (/unsupported role/i.test(raw)) return "Выбрана неподдерживаемая роль.";
       if (/login and password are required/i.test(raw)) return "Введите логин и пароль.";
       if (/already exists/i.test(raw) || /уже существует/i.test(raw)) return "Аккаунт с таким email уже существует.";
@@ -58,6 +61,50 @@ export async function login(credentials) {
       throw error;
     }
     throw new Error("Ошибка авторизации.");
+  }
+}
+
+export async function requestAdminLoginCode(payload) {
+  try {
+    const res = await kotlinFetch("/api/v1/auth/admin/request-code", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      throw new Error(await readErrorMessage(res));
+    }
+    return res.json();
+  } catch (error) {
+    if (error instanceof Error) {
+      if (/failed to fetch|networkerror|load failed/i.test(error.message)) {
+        throw new Error("Не удалось подключиться к сервису входа администратора.");
+      }
+      throw error;
+    }
+    throw new Error("Ошибка отправки кода.");
+  }
+}
+
+export async function loginAdminWithCode(payload) {
+  try {
+    const res = await kotlinFetch("/api/v1/auth/admin/login", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      throw new Error(await readErrorMessage(res));
+    }
+    const data = await res.json();
+    saveAccessToken(data.accessToken);
+    return data;
+  } catch (error) {
+    if (error instanceof Error) {
+      if (/failed to fetch|networkerror|load failed/i.test(error.message)) {
+        throw new Error("Не удалось подключиться к сервису входа администратора.");
+      }
+      throw error;
+    }
+    throw new Error("Ошибка входа администратора.");
   }
 }
 

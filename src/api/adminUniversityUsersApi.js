@@ -1,80 +1,91 @@
-/**
- * Админка: пользователи ВУЗов (учётные записи регистраторов / подписантов).
- *
- * Kotlin (пример контроллера):
- * - GET    /api/v1/admin/university-users
- * - POST   /api/v1/admin/university-users
- * - PATCH  /api/v1/admin/university-users/{id}
- * - DELETE /api/v1/admin/university-users/{id}
- */
+import { kotlinFetch } from "./config.js";
 
-import { API_BASE_URL, kotlinApiHeaders } from "./config.js";
+const AUTH_STORAGE_KEY = "diasoft_auth";
 
-/** @typedef {{ id: string, email: string, fullName: string, universityName: string, vuzUserRole: 'REGISTRAR' | 'SIGNER', active: boolean, createdAt?: string }} UniversityUserDto */
+function getCurrentAdminLogin() {
+  try {
+    const localRaw = localStorage.getItem(AUTH_STORAGE_KEY);
+    if (localRaw) {
+      const parsed = JSON.parse(localRaw);
+      if (typeof parsed?.login === "string" && parsed.login.trim()) return parsed.login.trim();
+    }
+    const sessionRaw = sessionStorage.getItem(AUTH_STORAGE_KEY);
+    if (sessionRaw) {
+      const parsed = JSON.parse(sessionRaw);
+      if (typeof parsed?.login === "string" && parsed.login.trim()) return parsed.login.trim();
+    }
+  } catch {
+    // ignore
+  }
+  return "";
+}
 
-const STUB_SEED = [
-  {
-    id: "seed-1",
-    email: "registrar@vuz1.demo",
-    fullName: "Сидоров П. П.",
-    universityName: "Демо-политех",
+async function readJsonOrThrow(res, defaultMessage) {
+  if (res.ok) return res.json();
+  let msg = defaultMessage;
+  try {
+    const payload = await res.json();
+    if (typeof payload?.error === "string" && payload.error.trim()) msg = payload.error.trim();
+  } catch {
+    // ignore
+  }
+  throw new Error(msg);
+}
+
+export async function listUniversityUsers() {
+  const login = getCurrentAdminLogin();
+  if (!login) throw new Error("Не найден активный аккаунт администратора.");
+
+  const res = await kotlinFetch(`/api/v1/admin/universities?login=${encodeURIComponent(login)}`);
+  const rows = await readJsonOrThrow(res, "Не удалось загрузить список ВУЗов.");
+  return Array.isArray(rows)
+    ? rows.map((row) => ({
+        id: String(row.code ?? row.email ?? Math.random()),
+        email: String(row.email ?? "").trim(),
+        fullName: String(row.contactFullName ?? "").trim(),
+        universityName: String(row.name ?? "").trim(),
+        vuzUserRole: "REGISTRAR",
+        active: Boolean(row.active),
+        createdAt: row.createdAt,
+        code: String(row.code ?? "").trim(),
+      }))
+    : [];
+}
+
+export async function createUniversityUser(payload) {
+  const login = getCurrentAdminLogin();
+  if (!login) throw new Error("Не найден активный аккаунт администратора.");
+
+  const universityName = String(payload.universityName ?? "").trim();
+  const body = {
+    code: universityName,
+    name: universityName,
+    email: String(payload.email ?? "").trim(),
+    contactFullName: String(payload.fullName ?? "").trim(),
+    password: String(payload.temporaryPassword ?? ""),
+  };
+  const res = await kotlinFetch(`/api/v1/admin/universities?login=${encodeURIComponent(login)}`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+  const row = await readJsonOrThrow(res, "Не удалось создать аккаунт ВУЗа.");
+  return {
+    id: String(row.code ?? row.email ?? Math.random()),
+    email: String(row.email ?? "").trim(),
+    fullName: String(row.contactFullName ?? "").trim(),
+    universityName: String(row.name ?? "").trim(),
     vuzUserRole: "REGISTRAR",
     active: true,
-    createdAt: new Date().toISOString(),
-  },
-];
-
-/**
- * @returns {Promise<UniversityUserDto[]>}
- */
-export async function listUniversityUsers() {
-  // Kotlin: GET /api/v1/admin/university-users
-  void API_BASE_URL;
-  void kotlinApiHeaders;
-  return Promise.resolve([...STUB_SEED]);
-}
-
-/**
- * @param {{ email: string, fullName: string, universityName: string, vuzUserRole: 'REGISTRAR' | 'SIGNER', temporaryPassword: string }} payload
- * @returns {Promise<UniversityUserDto>}
- */
-export async function createUniversityUser(payload) {
-  // Kotlin: POST /api/v1/admin/university-users
-  void API_BASE_URL;
-  void kotlinApiHeaders;
-  void payload.temporaryPassword;
-  const row = {
-    id: `stub-${Date.now()}`,
-    email: payload.email.trim(),
-    fullName: payload.fullName.trim(),
-    universityName: payload.universityName.trim(),
-    vuzUserRole: payload.vuzUserRole,
-    active: true,
+    code: String(row.code ?? "").trim(),
     createdAt: new Date().toISOString(),
   };
-  return Promise.resolve(row);
 }
 
-/**
- * @param {string} id
- * @returns {Promise<void>}
- */
-export async function deleteUniversityUser(id) {
-  // Kotlin: DELETE /api/v1/admin/university-users/{id}
-  void API_BASE_URL;
-  void kotlinApiHeaders;
-  void id;
-  return Promise.resolve();
+export async function deleteUniversityUser() {
+  throw new Error("Удаление аккаунта ВУЗа пока не реализовано.");
 }
 
-/**
- * @param {string} id
- * @param {{ active?: boolean }} patch
- * @returns {Promise<UniversityUserDto>}
- */
 export async function patchUniversityUser(id, patch) {
-  // Kotlin: PATCH /api/v1/admin/university-users/{id}
-  void API_BASE_URL;
-  void kotlinApiHeaders;
   return Promise.resolve({ id, ...patch });
 }
+
