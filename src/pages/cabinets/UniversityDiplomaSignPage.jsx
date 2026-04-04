@@ -1,8 +1,10 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import * as universityRegistryApi from "../../api/universityRegistryApi.js";
 import CabinetShell from "../../components/CabinetShell.jsx";
 import "./cabinet.css";
+
+const SIGN_ALGO = { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" };
 
 function isValidDraft(d) {
   if (!d || typeof d !== "object") return false;
@@ -20,13 +22,78 @@ function isValidDraft(d) {
   );
 }
 
+function toHex(buffer) {
+  return Array.from(new Uint8Array(buffer))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+function arrayBufferToBase64(buffer) {
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += 1) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+function base64ToArrayBuffer(base64) {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes.buffer;
+}
+
+function normalizePem(text) {
+  return String(text ?? "").replace(/\r/g, "").trim();
+}
+
+function extractPemBody(pem, beginMarker, endMarker) {
+  const normalized = normalizePem(pem);
+  if (!normalized.includes(beginMarker) || !normalized.includes(endMarker)) {
+    return "";
+  }
+  return normalized.replace(beginMarker, "").replace(endMarker, "").replace(/\s+/g, "");
+}
+
+function buildSigningPayload(draft) {
+  const canonical = [
+    String(draft.fullName ?? "").trim(),
+    String(draft.specialty ?? "").trim(),
+    String(draft.diplomaNumber ?? "").trim().toUpperCase(),
+    String(Number(draft.year)),
+  ].join("|");
+  return new TextEncoder().encode(canonical);
+}
+
+function jwkToPemPublic(jwk) {
+  const spki = {
+    kty: "RSA",
+    n: jwk.n,
+    e: jwk.e,
+    alg: "RS256",
+    ext: true,
+    key_ops: ["verify"],
+  };
+  return crypto.subtle.importKey("jwk", spki, SIGN_ALGO, true, ["verify"]).then((publicKey) =>
+    crypto.subtle.exportKey("spki", publicKey).then((spkiDer) => {
+      const b64 = arrayBufferToBase64(spkiDer);
+      const chunks = b64.match(/.{1,64}/g) ?? [];
+      return `-----BEGIN PUBLIC KEY-----\n${chunks.join("\n")}\n-----END PUBLIC KEY-----`;
+    })
+  );
+}
+
 export default function UniversityDiplomaSignPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const draft = location.state?.draft;
 
-  const [privateKeyFileName, setPrivateKeyFileName] = useState("");
   const [privateKeyHash, setPrivateKeyHash] = useState("");
+  const [privateKey, setPrivateKey] = useState(null);
+  const [publicKeyPem, setPublicKeyPem] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
 
@@ -36,55 +103,82 @@ export default function UniversityDiplomaSignPage() {
     }
   }, [draft, navigate]);
 
-  const toHex = (buffer) =>
-    Array.from(new Uint8Array(buffer))
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("");
+  const keyLoaded = useMemo(() => Boolean(privateKey && privateKeyHash && publicKeyPem), [privateKey, privateKeyHash, publicKeyPem]);
 
   const onPrivateKeyChange = useCallback(async (event) => {
     const file = event.target.files?.[0];
     if (!file) {
-      setPrivateKeyFileName("");
       setPrivateKeyHash("");
+      setPrivateKey(null);
+      setPublicKeyPem("");
       return;
     }
+
     try {
       const content = await file.text();
-      const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(content));
+      const normalizedPem = normalizePem(content);
+      if (normalizedPem.includes("BEGIN PUBLIC KEY")) {
+        event.target.value = "";
+        throw new Error("Вы выбрали публичный ключ. Нужен приватный ключ.");
+      }
+      if (!normalizedPem.includes("-----BEGIN PRIVATE KEY-----")) {
+        event.target.value = "";
+        throw new Error("Нужен приватный ключ в формате PKCS#8 (BEGIN PRIVATE KEY).");
+      }
+
+      const body = extractPemBody(normalizedPem, "-----BEGIN PRIVATE KEY-----", "-----END PRIVATE KEY-----");
+      if (!body) {
+        event.target.value = "";
+        throw new Error("Неверный формат PEM файла.");
+      }
+      const keyData = base64ToArrayBuffer(body);
+      const importedPrivateKey = await crypto.subtle.importKey("pkcs8", keyData, SIGN_ALGO, true, ["sign"]);
+      const jwk = await crypto.subtle.exportKey("jwk", importedPrivateKey);
+      const exportedPublicPem = await jwkToPemPublic(jwk);
+
+      const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(normalizedPem));
       setPrivateKeyHash(toHex(digest));
-      setPrivateKeyFileName(file.name);
+      setPrivateKey(importedPrivateKey);
+      setPublicKeyPem(exportedPublicPem);
       setError(null);
-    } catch {
-      setPrivateKeyFileName("");
+    } catch (err) {
+      event.target.value = "";
       setPrivateKeyHash("");
-      setError("Не удалось прочитать файл приватного ключа.");
+      setPrivateKey(null);
+      setPublicKeyPem("");
+      setError(err instanceof Error ? err.message : "Не удалось загрузить приватный ключ.");
     }
   }, []);
 
   const onSignAndCommit = useCallback(async () => {
     if (!isValidDraft(draft)) return;
-    if (!privateKeyHash) {
-      setError("Загрузите приватный ключ КЭП.");
+    if (!keyLoaded || !privateKey) {
+      setError("Загрузите корректный приватный ключ КЭП.");
       return;
     }
     setError(null);
     setBusy(true);
     try {
+      const payload = buildSigningPayload(draft);
+      const signature = await crypto.subtle.sign(SIGN_ALGO, privateKey, payload);
       const pkg = {
         fullName: draft.fullName.trim(),
         year: Number(draft.year),
         specialty: draft.specialty.trim(),
         diplomaNumber: draft.diplomaNumber.trim(),
         privateKeyHash,
+        signatureBase64: arrayBufferToBase64(signature),
+        publicKeyPem,
+        signatureAlgorithm: "RSASSA-PKCS1-v1_5-SHA-256",
       };
       await universityRegistryApi.commitSignedDiplomaRecord(pkg);
       navigate("/cabinet/vuz", { replace: true, state: { capSignedOk: true } });
     } catch {
-      setError("Не удалось сформировать подпись или сохранить запись.");
+      setError("Не удалось подписать и сохранить запись.");
     } finally {
       setBusy(false);
     }
-  }, [draft, navigate, privateKeyHash]);
+  }, [draft, keyLoaded, navigate, privateKey, privateKeyHash, publicKeyPem]);
 
   if (!isValidDraft(draft)) {
     return null;
@@ -94,7 +188,7 @@ export default function UniversityDiplomaSignPage() {
     <CabinetShell
       badge="Личный кабинет ВУЗа"
       title="Подпись КЭП"
-      subtitle="Загрузите приватный ключ КЭП: его SHA-256 хэш включается в общий хэш записи диплома перед сохранением в реестр."
+      subtitle="Загрузите приватный ключ КЭП: диплом подписывается на клиенте, а бэкенд проверяет подпись публичным ключом."
     >
       <p className="cabinet-section-lead" style={{ marginTop: 0 }}>
         <Link to="/cabinet/vuz" className="cap-sign-back">
@@ -125,7 +219,7 @@ export default function UniversityDiplomaSignPage() {
 
         <h3 className="cap-sign-subtitle">Приватный ключ КЭП</h3>
         <p className="cabinet-card__hint">
-          Выберите файл приватного ключа (например, `.pem`/`.key`). В систему уходит только его SHA-256 хэш.
+          Выберите приватный ключ в формате PKCS#8 (`BEGIN PRIVATE KEY`). Публичный ключ не подходит.
         </p>
         <label className="cabinet-field" style={{ marginTop: "0.75rem" }}>
           <span className="cabinet-field__label">Файл приватного ключа</span>
@@ -137,23 +231,15 @@ export default function UniversityDiplomaSignPage() {
             disabled={busy}
           />
         </label>
-        <p className="cabinet-mock" aria-label="Отпечаток приватного ключа">
-          {privateKeyHash ? (
-            <>
-              Файл: <strong>{privateKeyFileName}</strong>
-              <br />
-              SHA-256: <strong>{privateKeyHash}</strong>
-            </>
-          ) : (
-            "Приватный ключ пока не загружен."
-          )}
+        <p
+          className={`auth-error${error ? " is-visible" : ""}`}
+          role={error ? "alert" : undefined}
+          aria-live="polite"
+          aria-hidden={!error}
+          style={{ marginTop: "0.85rem" }}
+        >
+          {error ?? ""}
         </p>
-
-        {error ? (
-          <p className="auth-error" role="alert" style={{ marginTop: "0.85rem" }}>
-            {error}
-          </p>
-        ) : null}
 
         <div className="cabinet-actions" style={{ marginTop: "1rem" }}>
           <button type="button" className="btn btn--primary" disabled={busy} onClick={onSignAndCommit}>

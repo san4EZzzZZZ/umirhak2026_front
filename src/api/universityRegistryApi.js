@@ -129,6 +129,9 @@ export async function commitSignedDiplomaRecord(payload) {
     diplomaCode: String(payload.diplomaNumber ?? "").trim(),
     graduationYear: Number(payload.year),
     privateKeyHash: String(payload.privateKeyHash ?? "").trim().toLowerCase(),
+    signatureBase64: String(payload.signatureBase64 ?? "").trim(),
+    publicKeyPem: String(payload.publicKeyPem ?? "").trim(),
+    signatureAlgorithm: String(payload.signatureAlgorithm ?? "").trim(),
   };
   const res = await kotlinFetch(`/api/v1/university/registry/diplomas?login=${encodeURIComponent(login)}`, {
     method: "POST",
