@@ -173,21 +173,16 @@ export default function HomePage() {
                   </>
                 ) : (
                   <>
-                    <Link to="/login/vuz" className="btn btn--primary landing-hero__btn">
+                    <Link to="/login?role=student" className="btn btn--primary landing-hero__btn">
                       <span className="btn__shine" aria-hidden="true" />
-                      <span className="btn__label">Подключить вуз</span>
+                      <span className="btn__label">Войти как студент</span>
                     </Link>
-                    <Link to="/login" className="btn btn--secondary landing-hero__btn">
-                      <span className="btn__label">Выпускник или HR</span>
+                    <Link to="/login?role=employer" className="btn btn--secondary landing-hero__btn">
+                      <span className="btn__label">Войти как HR</span>
                     </Link>
                   </>
                 )}
               </div>
-              <ul className="landing-hero__chips" aria-label="Ключевые возможности">
-                <li>Электронная подпись пакетов</li>
-                <li>Проверка по QR</li>
-                <li>Отзыв и срок действия</li>
-              </ul>
             </div>
             <div className="landing-hero__visual">
               <LandingQrVerifyDemo />
