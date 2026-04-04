@@ -88,16 +88,24 @@ export default function UniversityCabinetPage() {
       setAnnulFeedback({ type: "err", text: "Введите номер диплома." });
       return;
     }
-    if (!window.confirm(`Аннулировать диплом «${n}»? В демо запись будет удалена из списка загруженных.`)) {
-      return;
-    }
     setBusy(true);
     try {
+      const preview = await universityRegistryApi.previewAnnulDiplomaByNumber(n);
+      if (!preview.found) {
+        setAnnulFeedback({ type: "err", text: "Диплом не найден." });
+        return;
+      }
+      const label = n;
+      const confirmed = window.confirm(`Вы уверены, что хотите аннулировать данный диплом?\nНомер: ${label}`);
+      if (!confirmed) {
+        return;
+      }
+
       const { removed } = await universityRegistryApi.annulDiplomaByNumber(n);
       if (!removed) {
-        setAnnulFeedback({ type: "err", text: "Запись с таким номером не найдена." });
+        setAnnulFeedback({ type: "err", text: "Не удалось аннулировать диплом." });
       } else {
-        setAnnulFeedback({ type: "ok", text: `Диплом «${n}» аннулирован.` });
+        setAnnulFeedback({ type: "ok", text: `Диплом «${label}» успешно аннулирован.` });
         setAnnulDiplomaNumber("");
       }
     } catch {

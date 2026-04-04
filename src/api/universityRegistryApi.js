@@ -118,6 +118,26 @@ export async function annulDiplomaByNumber(diplomaNumber) {
   return { removed: Boolean(data?.removed) };
 }
 
+export async function previewAnnulDiplomaByNumber(diplomaNumber) {
+  const login = getCurrentAuthLogin();
+  if (!login) {
+    throw new Error("Не найден активный пользователь ВУЗа.");
+  }
+  const number = String(diplomaNumber ?? "").trim();
+  if (!number) {
+    return { found: false };
+  }
+  const res = await kotlinFetch(
+    `/api/v1/university/registry/diplomas/revoke-preview?login=${encodeURIComponent(login)}&diplomaNumber=${encodeURIComponent(number)}`
+  );
+  const data = await readJsonOrThrow(res, "Не удалось найти диплом.");
+  return {
+    found: Boolean(data?.found),
+    fullName: typeof data?.fullName === "string" ? data.fullName : "",
+    diplomaNumber: typeof data?.diplomaNumber === "string" ? data.diplomaNumber : number,
+  };
+}
+
 export async function commitSignedDiplomaRecord(payload) {
   const login = getCurrentAuthLogin();
   if (!login) {
