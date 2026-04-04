@@ -3,11 +3,10 @@ import { Link, useNavigate } from "react-router-dom";
 import * as authApi from "../api/authApi.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { ROLES, cabinetPathForRole } from "../auth/authPaths.js";
-import { validateDemoCredentials } from "../auth/demoAccounts.js";
 import AuthShell from "../components/AuthShell.jsx";
 import DemoCredentialsPanel from "../components/DemoCredentialsPanel.jsx";
 import PasswordField from "../components/PasswordField.jsx";
-import { resolveSessionProfile } from "../auth/sessionProfile.js";
+import { toSessionProfileFromFullName } from "../auth/sessionProfile.js";
 import { useSubmitRipple } from "../hooks/useSubmitRipple.js";
 
 export default function UniversityLoginPage() {
@@ -27,21 +26,24 @@ export default function UniversityLoginPage() {
     const login = fd.get("login")?.toString().trim();
     const password = fd.get("password")?.toString() ?? "";
     if (!login) return;
-    if (!validateDemoCredentials(ROLES.university, login, password)) {
-      setAuthError("Неверный логин или пароль. Используйте строку ВУЗ из таблицы ниже.");
-      return;
-    }
+    let authResult;
     try {
-      await authApi.login({ role: ROLES.university, login, password });
-    } catch {
-      setAuthError("Не удалось связаться с сервером (заглушка Kotlin API).");
+      authResult = await authApi.login({ role: ROLES.university, login, password });
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : "Ошибка авторизации");
       return;
     }
     triggerRipple();
     const persist = fd.get("remember") === "on";
-    const { firstName, lastName } = resolveSessionProfile(login);
-    signIn({ role: ROLES.university, login, persist, firstName, lastName });
-    navigate(cabinetPathForRole(ROLES.university));
+    const { firstName, lastName } = toSessionProfileFromFullName(authResult?.fullName);
+    signIn({
+      role: authResult?.role ?? ROLES.university,
+      login: authResult?.login ?? login,
+      persist,
+      firstName,
+      lastName,
+    });
+    navigate(cabinetPathForRole(authResult?.role ?? ROLES.university));
   };
 
   return (

@@ -20,9 +20,5 @@ export function kotlinApiHeaders() {
 /** Обёртка под fetch с единой точкой для логирования и замены на ktor-client / Retrofit */
 export async function kotlinFetch(path, options = {}) {
   const url = `${API_BASE_URL.replace(/\/$/, "")}${path.startsWith("/") ? path : `/${path}`}`;
-  // TODO Kotlin backend: раскомментировать при готовности API
-  // return fetch(url, { ...options, headers: { ...kotlinApiHeaders(), ...options.headers } });
-  void url;
-  void options;
-  return Promise.reject(new Error("Kotlin API: вызов отключён в заглушке (подключите fetch в src/api/config.js)"));
+  return fetch(url, { ...options, headers: { ...kotlinApiHeaders(), ...options.headers } });
 }

@@ -1,13 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import * as authApi from "../api/authApi.js";
-import { validatePlatformAdminLogin } from "../api/adminPlatformAdminsApi.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { ROLES, cabinetPathForRole } from "../auth/authPaths.js";
-import { validateDemoCredentials } from "../auth/demoAccounts.js";
 import AuthShell from "../components/AuthShell.jsx";
 import PasswordField from "../components/PasswordField.jsx";
-import { resolveSessionProfile } from "../auth/sessionProfile.js";
+import { toSessionProfileFromFullName } from "../auth/sessionProfile.js";
 import { useSubmitRipple } from "../hooks/useSubmitRipple.js";
 
 export default function AdminLoginPage() {
@@ -28,26 +26,35 @@ export default function AdminLoginPage() {
     const password = fd.get("password")?.toString() ?? "";
     if (!login) return;
 
-    let resolvedRole = null;
-    if (validateDemoCredentials(ROLES.superadmin, login, password)) {
-      resolvedRole = ROLES.superadmin;
-    } else if (validatePlatformAdminLogin(login, password)) {
-      resolvedRole = ROLES.admin;
-    } else {
-      setAuthError("Неверный логин или пароль.");
-      return;
-    }
+    let authResult = null;
 
     try {
-      await authApi.login({ role: resolvedRole, login, password });
-    } catch {
-      setAuthError("Не удалось связаться с сервером (заглушка API).");
-      return;
+      authResult = await authApi.login({ role: ROLES.superadmin, login, password });
+    } catch (firstError) {
+      try {
+        authResult = await authApi.login({ role: ROLES.admin, login, password });
+      } catch (secondError) {
+        const message =
+          secondError instanceof Error
+            ? secondError.message
+            : firstError instanceof Error
+              ? firstError.message
+              : "Неверный логин или пароль";
+        setAuthError(message);
+        return;
+      }
     }
     triggerRipple();
     const persist = fd.get("remember") === "on";
-    const { firstName, lastName } = resolveSessionProfile(login);
-    signIn({ role: resolvedRole, login, persist, firstName, lastName });
+    const resolvedRole = authResult?.role ?? ROLES.admin;
+    const { firstName, lastName } = toSessionProfileFromFullName(authResult?.fullName);
+    signIn({
+      role: resolvedRole,
+      login: authResult?.login ?? login,
+      persist,
+      firstName,
+      lastName,
+    });
     navigate(cabinetPathForRole(resolvedRole));
   };
 
