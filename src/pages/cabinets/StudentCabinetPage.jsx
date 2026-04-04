@@ -7,9 +7,11 @@ import { DGTU_SFU_BRANCH_NAMES } from "../../data/dgtuSfuBranches.js";
 import { ISLOD_VPO_UNIVERSITY_NAMES } from "../../data/islodVpoUniversities.js";
 import { MGU_BRANCH_NAMES } from "../../data/mguBranches.js";
 import { ROSTGMU_NAMES } from "../../data/rostgmuBranches.js";
+import { RGUPS_NAMES } from "../../data/rgupsBranches.js";
+import { RINH_NAMES } from "../../data/rinhBranches.js";
 import "./cabinet.css";
 
-/** Демо-реестр + ВПО (ISLOD) + филиалы ДГТУ/ЮФУ + МГУ + РостГМУ; пересборка ISLOD: node scripts/fetch_islod_vpo_universities.mjs */
+/** Демо-реестр + ВПО (ISLOD) + филиалы ДГТУ/ЮФУ + МГУ + РостГМУ + РГУПС + РИНХ; пересборка ISLOD: node scripts/fetch_islod_vpo_universities.mjs */
 const DIPLOMA_SEARCH_VUZ_OPTIONS = [
   ...new Set([
     "Демо-университет",
@@ -17,6 +19,8 @@ const DIPLOMA_SEARCH_VUZ_OPTIONS = [
     ...DGTU_SFU_BRANCH_NAMES,
     ...MGU_BRANCH_NAMES,
     ...ROSTGMU_NAMES,
+    ...RGUPS_NAMES,
+    ...RINH_NAMES,
   ]),
 ].sort((a, b) => a.localeCompare(b, "ru"));
 
