@@ -1,11 +1,10 @@
 /**
- * Кабинет ВУЗа: пакеты реестра, подпись, статистика.
+ * Кабинет ВУЗа: статистика дашборда и записи реестра дипломов.
  *
- * Kotlin:
- * - GET  /api/v1/university/registry/dashboard
- * - GET  /api/v1/university/registry/packages
- * - POST /api/v1/university/registry/packages/upload  (multipart)
- * - POST /api/v1/university/registry/packages/{id}/sign
+ * Kotlin (пример):
+ * - GET /api/v1/university/registry/dashboard
+ * - CRUD дипломов — по договорённости (см. addDiplomaRecord и т.д.)
+ * - Аннулирование по номеру — например DELETE /api/v1/university/diplomas/by-number?number=...
  */
 
 import { API_BASE_URL, kotlinApiHeaders } from "./config.js";
@@ -17,37 +16,7 @@ export async function getRegistryDashboardStats() {
   return Promise.resolve({
     pendingSignature: 3,
     inRegistry: 1248,
-    addedThisMonth: 86,
   });
-}
-
-export async function listRegistryPackages() {
-  // Kotlin: GET /api/v1/university/registry/packages
-  void API_BASE_URL;
-  void kotlinApiHeaders;
-  return Promise.resolve([
-    { fileName: "graduates_2025_spring.xml", uploadedAt: "2026-04-02", status: "SIGNATURE" },
-    { fileName: "graduates_2024_winter.xml", uploadedAt: "2026-01-15", status: "IN_REGISTRY" },
-    { fileName: "magistracy_2025.xml", uploadedAt: "2026-03-28", status: "REVIEW" },
-  ]);
-}
-
-/** @param {File | null} file */
-export async function uploadRegistryPackage(file) {
-  // Kotlin: POST multipart /api/v1/university/registry/packages/upload
-  void API_BASE_URL;
-  void kotlinApiHeaders;
-  void file;
-  return Promise.resolve({ packageId: `pkg-${Date.now()}` });
-}
-
-/** @param {string} packageId */
-export async function signRegistryPackage(packageId) {
-  // Kotlin: POST /api/v1/university/registry/packages/{id}/sign
-  void API_BASE_URL;
-  void kotlinApiHeaders;
-  void packageId;
-  return Promise.resolve({ ok: true });
 }
 
 /* ——— Записи реестра дипломов (демо: localStorage; Kotlin: CRUD по реестру) ——— */
@@ -120,4 +89,26 @@ export async function addDiplomaRecordsBulk(rows) {
   }));
   writeDiplomas([...newOnes, ...existing]);
   return Promise.resolve({ added: newOnes.length });
+}
+
+/**
+ * Удаляет запись реестра по номеру диплома (без учёта регистра и лишних пробелов по краям).
+ * @param {string} diplomaNumber
+ * @returns {Promise<{ removed: boolean, record?: DiplomaRecordDto }>}
+ */
+export async function annulDiplomaByNumber(diplomaNumber) {
+  void API_BASE_URL;
+  void kotlinApiHeaders;
+  const q = String(diplomaNumber ?? "").trim().toLowerCase();
+  if (!q) {
+    return Promise.resolve({ removed: false });
+  }
+  const records = readDiplomas();
+  const idx = records.findIndex((r) => String(r.diplomaNumber ?? "").trim().toLowerCase() === q);
+  if (idx === -1) {
+    return Promise.resolve({ removed: false });
+  }
+  const [removed] = records.splice(idx, 1);
+  writeDiplomas(records);
+  return Promise.resolve({ removed: true, record: removed });
 }

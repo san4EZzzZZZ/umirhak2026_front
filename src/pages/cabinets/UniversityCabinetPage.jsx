@@ -7,53 +7,30 @@ import "./cabinet.css";
 /** Данные с Kotlin-бэкенда: см. universityRegistryApi.js */
 
 export default function UniversityCabinetPage() {
-  const [stats, setStats] = useState({ pendingSignature: "—", inRegistry: "—", addedThisMonth: "—" });
-  const [packages, setPackages] = useState([]);
+  const [stats, setStats] = useState({ pendingSignature: "—", inRegistry: "—" });
   const [diplomas, setDiplomas] = useState([]);
   const [busy, setBusy] = useState(false);
   const [diplomaFormError, setDiplomaFormError] = useState(null);
   const [bulkPreview, setBulkPreview] = useState({ rows: [], errors: [] });
   const [bulkMessage, setBulkMessage] = useState(null);
+  const [annulDiplomaNumber, setAnnulDiplomaNumber] = useState("");
+  const [annulFeedback, setAnnulFeedback] = useState(null);
 
   const load = useCallback(async () => {
-    const [s, pkgs, dips] = await Promise.all([
+    const [s, dips] = await Promise.all([
       universityRegistryApi.getRegistryDashboardStats(),
-      universityRegistryApi.listRegistryPackages(),
       universityRegistryApi.listDiplomaRecords(),
     ]);
     setStats({
       pendingSignature: String(s.pendingSignature),
       inRegistry: String(s.inRegistry),
-      addedThisMonth: s.addedThisMonth >= 0 ? `+${s.addedThisMonth}` : String(s.addedThisMonth),
     });
-    setPackages(pkgs);
     setDiplomas(dips);
   }, []);
 
   useEffect(() => {
     load();
   }, [load]);
-
-  const onUpload = async () => {
-    setBusy(true);
-    try {
-      await universityRegistryApi.uploadRegistryPackage(null);
-      await load();
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const onSign = async () => {
-    setBusy(true);
-    try {
-      const first = packages[0];
-      if (first) await universityRegistryApi.signRegistryPackage(first.fileName);
-      await load();
-    } finally {
-      setBusy(false);
-    }
-  };
 
   const onAddOneDiploma = async (e) => {
     e.preventDefault();
@@ -112,6 +89,33 @@ export default function UniversityCabinetPage() {
     }
   };
 
+  const onAnnulDiploma = async () => {
+    const n = annulDiplomaNumber.trim();
+    setAnnulFeedback(null);
+    if (!n) {
+      setAnnulFeedback({ type: "err", text: "Введите номер диплома." });
+      return;
+    }
+    if (!window.confirm(`Аннулировать диплом «${n}»? В демо запись будет удалена из списка загруженных.`)) {
+      return;
+    }
+    setBusy(true);
+    try {
+      const { removed } = await universityRegistryApi.annulDiplomaByNumber(n);
+      if (!removed) {
+        setAnnulFeedback({ type: "err", text: "Запись с таким номером не найдена." });
+      } else {
+        setAnnulFeedback({ type: "ok", text: `Диплом «${n}» аннулирован.` });
+        setAnnulDiplomaNumber("");
+        await load();
+      }
+    } catch {
+      setAnnulFeedback({ type: "err", text: "Не удалось выполнить операцию." });
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const onBulkImport = async () => {
     if (bulkPreview.rows.length === 0) return;
     setBusy(true);
@@ -128,12 +132,6 @@ export default function UniversityCabinetPage() {
     }
   };
 
-  const statusLabel = (st) => {
-    if (st === "IN_REGISTRY") return { text: "В реестре", cls: "cabinet-pill--ok" };
-    if (st === "SIGNATURE") return { text: "Подпись", cls: "cabinet-pill--wait" };
-    return { text: "Проверка", cls: "cabinet-pill--wait" };
-  };
-
   const fmtDate = (iso) => {
     try {
       const d = new Date(iso);
@@ -146,28 +144,73 @@ export default function UniversityCabinetPage() {
   return (
     <CabinetShell
       badge="Личный кабинет ВУЗа"
-      title="Реестр и подписание данных"
-      subtitle="Управление выгрузками выпускников, контроль статуса электронной подписи и публикации в едином реестре проверки дипломов."
+      title="Реестр дипломов"
+      subtitle="Добавление и импорт записей о выпускниках для единого реестра проверки дипломов."
     >
       <div className="cabinet-grid cabinet-grid--stats">
         <div className="cabinet-card">
           <h2 className="cabinet-card__title">Ожидают подписи</h2>
           <p className="cabinet-card__meta">{stats.pendingSignature}</p>
-          <p className="cabinet-card__hint">Пакеты загружены, требуется КЭП уполномоченного лица</p>
+          <p className="cabinet-card__hint">Записи, ожидающие подписи уполномоченного лица</p>
         </div>
         <div className="cabinet-card">
           <h2 className="cabinet-card__title">В реестре</h2>
           <p className="cabinet-card__meta">{stats.inRegistry}</p>
           <p className="cabinet-card__hint">Записи об образовании с действующей подписью</p>
         </div>
-        <div className="cabinet-card">
-          <h2 className="cabinet-card__title">За месяц</h2>
-          <p className="cabinet-card__meta">{stats.addedThisMonth}</p>
-          <p className="cabinet-card__hint">Новые записи после последней синхронизации</p>
-        </div>
       </div>
 
-      <h2 className="cabinet-section-title">Реестр дипломов</h2>
+      <h2 className="cabinet-section-title">Поиск по номеру диплома</h2>
+      <p className="cabinet-section-lead">
+        Введите номер так, как он указан в реестре. Пример формата: <strong>ВСГ 1234567</strong> (буквы серии, пробел, цифры).
+      </p>
+      <div className="cabinet-card admin-form-card" style={{ marginTop: "0.75rem" }}>
+        <h3 className="cabinet-card__title">Найти и аннулировать</h3>
+        <div className="cabinet-diploma-search-row" style={{ marginTop: "0.65rem" }}>
+          <label className="cabinet-field cabinet-field--grow">
+            <span className="cabinet-field__label">Номер диплома</span>
+            <input
+              className="cabinet-field__input"
+              type="search"
+              value={annulDiplomaNumber}
+              onChange={(e) => {
+                setAnnulDiplomaNumber(e.target.value);
+                setAnnulFeedback(null);
+              }}
+              placeholder="Например: ВСГ 1234567"
+              autoComplete="off"
+              disabled={busy}
+            />
+          </label>
+          <button
+            type="button"
+            className="btn btn--secondary cabinet-annul-btn"
+            disabled={busy}
+            onClick={onAnnulDiploma}
+          >
+            <span className="btn__label">Аннулировать</span>
+          </button>
+        </div>
+        <p className="cabinet-card__hint" style={{ marginTop: "0.65rem", marginBottom: 0 }}>
+          Сравнение номера без учёта регистра.
+        </p>
+        {annulFeedback ? (
+          <p
+            className="cabinet-card__hint"
+            style={{
+              marginTop: "0.65rem",
+              marginBottom: 0,
+              color:
+                annulFeedback.type === "ok" ? "rgba(0, 242, 255, 0.88)" : "rgba(255, 201, 212, 0.95)",
+            }}
+            role={annulFeedback.type === "err" ? "alert" : "status"}
+          >
+            {annulFeedback.text}
+          </p>
+        ) : null}
+      </div>
+
+      <h2 className="cabinet-section-title">Загрузка в реестр</h2>
       <p className="cabinet-section-lead">
         Поля: <strong>ФИО</strong>, <strong>год выпуска</strong>, <strong>специальность</strong>, <strong>номер диплома</strong>. В CSV/Excel первая строка — заголовки
         (например: ФИО; Год; Специальность; Номер диплома) или четыре колонки без заголовка в этом порядке.
@@ -301,53 +344,6 @@ export default function UniversityCabinetPage() {
                   <td>{fmtDate(d.createdAt)}</td>
                 </tr>
               ))
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      <h2 className="cabinet-section-title" style={{ marginTop: "2.25rem" }}>
-        Пакеты выгрузки (XML)
-      </h2>
-      <div className="cabinet-actions">
-        <button type="button" className="btn btn--primary" disabled={busy} onClick={onUpload}>
-          <span className="btn__shine" aria-hidden="true" />
-          <span className="btn__label">Загрузить реестр</span>
-        </button>
-        <button type="button" className="btn btn--secondary" disabled={busy || packages.length === 0} onClick={onSign}>
-          <span className="btn__label">Подписать пакет</span>
-        </button>
-      </div>
-
-      <div className="cabinet-table-wrap" style={{ marginTop: "1.75rem" }}>
-        <table className="cabinet-table">
-          <thead>
-            <tr>
-              <th scope="col">Пакет</th>
-              <th scope="col">Загружен</th>
-              <th scope="col">Статус</th>
-            </tr>
-          </thead>
-          <tbody>
-            {packages.length === 0 ? (
-              <tr>
-                <td colSpan={3} style={{ color: "var(--text-muted)" }}>
-                  Нет данных — Kotlin: GET /api/v1/university/registry/packages
-                </td>
-              </tr>
-            ) : (
-              packages.map((p) => {
-                const { text, cls } = statusLabel(p.status);
-                return (
-                  <tr key={p.fileName}>
-                    <td>{p.fileName}</td>
-                    <td>{p.uploadedAt}</td>
-                    <td>
-                      <span className={`cabinet-pill ${cls}`}>{text}</span>
-                    </td>
-                  </tr>
-                );
-              })
             )}
           </tbody>
         </table>
