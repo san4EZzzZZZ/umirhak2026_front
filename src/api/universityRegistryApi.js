@@ -41,12 +41,17 @@ async function readJsonOrThrow(res, defaultMessage) {
 }
 
 function mapRowToBackend(row) {
-  return {
+  const payload = {
     fullName: String(row.fullName ?? "").trim(),
     specialty: String(row.specialty ?? "").trim(),
     diplomaCode: String(row.diplomaNumber ?? "").trim(),
     graduationYear: Number(row.year),
   };
+  if (row.privateKeyHash) payload.privateKeyHash = String(row.privateKeyHash).trim().toLowerCase();
+  if (row.signatureBase64) payload.signatureBase64 = String(row.signatureBase64).trim();
+  if (row.publicKeyPem) payload.publicKeyPem = String(row.publicKeyPem).trim();
+  if (row.signatureAlgorithm) payload.signatureAlgorithm = String(row.signatureAlgorithm).trim();
+  return payload;
 }
 
 function mapDtoToUi(row) {

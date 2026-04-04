@@ -236,7 +236,7 @@ export default function UniversityDiplomaSignPage() {
           role={error ? "alert" : undefined}
           aria-live="polite"
           aria-hidden={!error}
-          style={{ marginTop: "0.85rem" }}
+          style={{ marginTop: "1.25rem" }}
         >
           {error ?? ""}
         </p>

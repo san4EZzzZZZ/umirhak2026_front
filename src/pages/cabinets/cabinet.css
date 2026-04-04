@@ -522,6 +522,36 @@ select.cabinet-field__input {
   font-size: 0.76rem;
 }
 
+.cabinet-bulk-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(4, 8, 22, 0.72);
+  backdrop-filter: blur(6px);
+}
+
+.cabinet-bulk-modal__panel {
+  width: min(980px, 100%);
+  max-height: min(84vh, 920px);
+  overflow: auto;
+  padding: 1rem 1.1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(8, 12, 30, 0.96);
+  box-shadow: 0 20px 54px rgba(0, 0, 0, 0.48);
+}
+
+.cabinet-bulk-table-wrap {
+  margin-top: 0.85rem;
+  border-radius: 10px;
+  overflow: auto;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
 /* Личный кабинет студента — блок ТЗ и оформление шаринга / QR */
 .student-cabinet-hero {
   border-radius: var(--radius-md);
