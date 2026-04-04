@@ -213,7 +213,11 @@ export default function UniversityCabinetPage() {
 
   const onBulkSignAndUpload = async () => {
     if (bulkPreview.rows.length === 0) return;
-    if (!bulkKeyLoaded || !bulkPrivateKey) {
+    if (!bulkPrivateKey) {
+      setBulkSignError("Ключ не выбран.");
+      return;
+    }
+    if (!bulkKeyLoaded) {
       setBulkSignError("Загрузите корректный приватный ключ КЭП.");
       return;
     }

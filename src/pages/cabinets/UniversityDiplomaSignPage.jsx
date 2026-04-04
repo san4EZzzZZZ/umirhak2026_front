@@ -152,7 +152,11 @@ export default function UniversityDiplomaSignPage() {
 
   const onSignAndCommit = useCallback(async () => {
     if (!isValidDraft(draft)) return;
-    if (!keyLoaded || !privateKey) {
+    if (!privateKey) {
+      setError("Ключ не выбран.");
+      return;
+    }
+    if (!keyLoaded) {
       setError("Загрузите корректный приватный ключ КЭП.");
       return;
     }
