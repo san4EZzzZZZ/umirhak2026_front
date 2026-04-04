@@ -62,24 +62,18 @@ const AUDIENCE = [
     id: "vuz",
     title: "Вузам и колледжам",
     desc: "Ведение реестра выпускников, ЭП, выгрузки и сопровождение данных без лишней бюрократии.",
-    to: "/login/vuz",
-    cta: "Кабинет образовательной организации",
     accent: "purple",
   },
   {
     id: "graduate",
-    title: "Студентам и выпускникам",
+    title: "Выпускникам",
     desc: "Понятный статус диплома и безопасная передача подтверждения работодателю — вы сами управляете доступом.",
-    to: "/login",
-    cta: "Войти как выпускник",
     accent: "cyan",
   },
   {
     id: "hr",
     title: "HR и работодателям",
     desc: "Поиск по реестру, проверка QR и фиксация результата — меньше риска ошибочного найма.",
-    to: "/login",
-    cta: "Портал для HR",
     accent: "magenta",
   },
 ];
@@ -236,10 +230,6 @@ export default function HomePage() {
               <li key={a.id} className={`landing-card landing-card--${a.accent}`}>
                 <h3 className="landing-card__title">{a.title}</h3>
                 <p className="landing-card__desc">{a.desc}</p>
-                <Link to={a.to} className="landing-card__link">
-                  {a.cta}
-                  <span aria-hidden="true"> →</span>
-                </Link>
               </li>
             ))}
           </ul>
