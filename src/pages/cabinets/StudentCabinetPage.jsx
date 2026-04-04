@@ -124,6 +124,7 @@ export default function StudentCabinetPage() {
       const created = await studentDiplomaApi.createStudentVerificationLink({
         universityCode: form.universityCode,
         diplomaNumber: form.diplomaNumber,
+        specialty: form.specialty,
         ttlHours,
       });
       await loadLinks();

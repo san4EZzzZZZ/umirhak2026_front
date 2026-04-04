@@ -64,6 +64,7 @@ export async function createStudentVerificationLink(payload) {
   const body = {
     universityCode: String(payload.universityCode ?? "").trim(),
     diplomaNumber: String(payload.diplomaNumber ?? "").trim(),
+    specialty: String(payload.specialty ?? "").trim(),
     ttlHours: Number(payload.ttlHours ?? 72),
   };
   const res = await kotlinFetch(`/api/v1/student/registry/verification-links?login=${encodeURIComponent(login)}`, {
