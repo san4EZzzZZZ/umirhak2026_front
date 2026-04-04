@@ -95,11 +95,6 @@ export default function ForgotPasswordPage() {
               «Спам». Ссылка действует ограниченное время.
             </p>
             <p className="auth-crosslink">
-              <Link to="/login/reset-password" className="link-muted">
-                Уже есть ссылка из письма? Ввести новый пароль →
-              </Link>
-            </p>
-            <p className="auth-crosslink">
               <Link to="/login" className="link-muted">
                 ← Вернуться ко входу
               </Link>

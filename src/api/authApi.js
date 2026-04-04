@@ -107,11 +107,64 @@ export async function refreshSession() {
 }
 
 export async function requestPasswordReset(payload) {
-  void payload;
-  return Promise.resolve({});
+  try {
+    const res = await kotlinFetch("/api/v1/auth/password-reset/request", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      throw new Error(await readErrorMessage(res));
+    }
+    return res.json();
+  } catch (error) {
+    if (error instanceof Error) {
+      if (/failed to fetch|networkerror|load failed/i.test(error.message)) {
+        throw new Error("Не удалось подключиться к сервису восстановления пароля.");
+      }
+      throw error;
+    }
+    throw new Error("Ошибка отправки запроса на восстановление.");
+  }
 }
 
 export async function confirmPasswordReset(payload) {
-  void payload;
-  return Promise.resolve({});
+  try {
+    const res = await kotlinFetch("/api/v1/auth/password-reset/confirm", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      throw new Error(await readErrorMessage(res));
+    }
+    return res.json();
+  } catch (error) {
+    if (error instanceof Error) {
+      if (/failed to fetch|networkerror|load failed/i.test(error.message)) {
+        throw new Error("Не удалось подключиться к сервису смены пароля.");
+      }
+      throw error;
+    }
+    throw new Error("Ошибка смены пароля.");
+  }
+}
+
+export async function validatePasswordResetToken(token) {
+  const safeToken = String(token ?? "").trim();
+  if (!safeToken) return { active: false };
+  try {
+    const res = await kotlinFetch(`/api/v1/auth/password-reset/validate?token=${encodeURIComponent(safeToken)}`);
+    if (!res.ok) {
+      throw new Error(await readErrorMessage(res));
+    }
+    const data = await res.json();
+    return { active: Boolean(data?.active) };
+  } catch (error) {
+    if (error instanceof Error) {
+      if (/failed to fetch|networkerror|load failed/i.test(error.message)) {
+        throw new Error("Не удалось подключиться к сервису проверки ссылки.");
+      }
+      throw error;
+    }
+    throw new Error("Ошибка проверки ссылки сброса.");
+  }
 }

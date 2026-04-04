@@ -32,6 +32,8 @@ export default function App() {
             <Route path="/register/hr" element={<RegisterByRolePage role={ROLES.employer} />} />
             <Route path="/login/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/login/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
             <Route path="/login/vuz" element={<UniversityLoginPage />} />
             <Route path="/request/university" element={<UniversityApplicationPage />} />
             <Route path="/login/vuz/forgot-password" element={<UniversityForgotPasswordPage />} />

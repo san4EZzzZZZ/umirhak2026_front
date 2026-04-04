@@ -57,11 +57,6 @@ export default function AdminForgotPasswordPage() {
               Если учётная запись найдена, письмо отправлено. Ссылка одноразовая и ограничена по времени.
             </p>
             <p className="auth-crosslink">
-              <Link to="/login/reset-password" className="link-muted">
-                Уже есть ссылка из письма? Ввести новый пароль →
-              </Link>
-            </p>
-            <p className="auth-crosslink">
               <Link to="/login/admin" className="link-muted">
                 ← Вернуться ко входу
               </Link>

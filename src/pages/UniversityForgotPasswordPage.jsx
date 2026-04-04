@@ -57,11 +57,6 @@ export default function UniversityForgotPasswordPage() {
               Если такой аккаунт зарегистрирован, письмо со ссылкой отправлено. Проверьте входящие и «Спам».
             </p>
             <p className="auth-crosslink">
-              <Link to="/login/reset-password" className="link-muted">
-                Уже есть ссылка из письма? Ввести новый пароль →
-              </Link>
-            </p>
-            <p className="auth-crosslink">
               <Link to="/login/vuz" className="link-muted">
                 ← Вернуться ко входу ВУЗа
               </Link>
