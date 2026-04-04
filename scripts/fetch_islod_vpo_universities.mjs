@@ -1,20 +1,26 @@
 /**
- * То же, что fetch_islod_vpo_universities.py: выгрузка ВПО с ISLOD → islodVpoUniversities.js
- * Если API недоступен, собирает запасной список из локальных данных репозитория.
+ * Выгрузка ВПО с ISLOD → src/data/islodVpoUniversities.js
+ * Если API недоступен, собирает запасной список из локальных данных и текстовых файлов.
  *
  * Запуск из umirhak2026_front:
  *   node scripts/fetch_islod_vpo_universities.mjs
+ *
+ * Дополнительно можно положить рядом с проектом или в корень front файлы
+ * universities_ru.txt / universities.txt (по строке на вуз) — они попадут в запасной список.
  */
 
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { DGTU_SFU_BRANCH_NAMES } from "../src/data/dgtuSfuBranches.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, "..");
 const OUT_JS = path.join(ROOT, "src", "data", "islodVpoUniversities.js");
 
 const API = "https://islod.obrnadzor.gov.ru/rlic/api/search";
+/** Крупнее страница — меньше запросов при полной выгрузке. */
+const PAGE_SIZE = 200;
 
 function writeModule(names, sourceComment) {
   const unique = [...new Set(names.filter(Boolean))].sort((a, b) =>
@@ -36,7 +42,6 @@ ${lines}
 async function fetchFromIslod() {
   const all = [];
   let page = 0;
-  const pageSize = 100;
   for (;;) {
     const res = await fetch(API, {
       method: "POST",
@@ -46,7 +51,7 @@ async function fetchFromIslod() {
       },
       body: JSON.stringify({
         page,
-        size: pageSize,
+        size: PAGE_SIZE,
         sort: { sorted: false, unsorted: true, empty: true },
         query: { region: null, orgName: "", orgType: "VPO" },
       }),
@@ -61,37 +66,76 @@ async function fetchFromIslod() {
       const name = item.fullName;
       if (name) all.push(name);
     }
-    console.log(`Страница ${page}, всего: ${all.length}`);
+    console.log(`Страница ${page}, на странице: ${content.length}, всего: ${all.length}`);
+
+    const totalPages = typeof data.totalPages === "number" ? data.totalPages : null;
+    const last =
+      data.last === true ||
+      (totalPages !== null && page + 1 >= totalPages) ||
+      content.length < PAGE_SIZE;
+
     page += 1;
+    if (last) break;
+
     await new Promise((r) => setTimeout(r, 500));
   }
   return all;
 }
 
+function readTextListFile(absPath) {
+  try {
+    const t = fs.readFileSync(absPath, "utf8");
+    return t
+      .split(/\r?\n/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
 async function loadFallback() {
+  const merged = [];
   const { RUSSIAN_UNIVERSITIES } = await import("../src/data/russianUniversities.js");
   const { VUZ_LIST_NAMES } = await import("../src/data/vuzList.js");
+  merged.push(...RUSSIAN_UNIVERSITIES, ...VUZ_LIST_NAMES);
+
   const wikiPath = path.join(ROOT, "tmp_wiki_vuz.json");
-  let wiki = [];
   try {
-    wiki = JSON.parse(fs.readFileSync(wikiPath, "utf8"));
+    const wiki = JSON.parse(fs.readFileSync(wikiPath, "utf8"));
+    if (Array.isArray(wiki)) merged.push(...wiki);
   } catch {
     /* optional */
   }
-  return [...RUSSIAN_UNIVERSITIES, ...VUZ_LIST_NAMES, ...wiki];
+
+  const extraTxtPaths = [
+    path.join(ROOT, "universities_ru.txt"),
+    path.join(ROOT, "universities.txt"),
+    path.join(ROOT, "..", "universities_ru.txt"),
+    path.join(ROOT, "..", "universities.txt"),
+  ];
+  for (const p of extraTxtPaths) {
+    const lines = readTextListFile(p);
+    if (lines.length) {
+      console.log(`+ ${lines.length} строк из ${p}`);
+      merged.push(...lines);
+    }
+  }
+
+  return merged;
 }
 
 try {
   const fromApi = await fetchFromIslod();
   writeModule(
-    fromApi,
-    "Источник: API https://islod.obrnadzor.gov.ru/rlic/api/search (orgType=VPO). Пересборка: node scripts/fetch_islod_vpo_universities.mjs",
+    [...fromApi, ...DGTU_SFU_BRANCH_NAMES],
+    "Источник: API https://islod.obrnadzor.gov.ru/rlic/api/search (orgType=VPO) + филиалы ДГТУ/ЮФУ (src/data/dgtuSfuBranches.js). Пересборка: node scripts/fetch_islod_vpo_universities.mjs",
   );
 } catch (e) {
   console.warn("ISLOD недоступен, используется локальный запасной список:", e.message);
   const fb = await loadFallback();
   writeModule(
-    fb,
-    "Запасной список из src/data (russianUniversities, vuzList, tmp_wiki_vuz). Для полного реестра: python scripts/fetch_islod_vpo_universities.py",
+    [...fb, ...DGTU_SFU_BRANCH_NAMES],
+    "Запасной список: russianUniversities, vuzList, tmp_wiki_vuz, txt-файлы + филиалы ДГТУ/ЮФУ (dgtuSfuBranches.js). Полная выгрузка: node scripts/fetch_islod_vpo_universities.mjs (когда API доступен).",
   );
 }

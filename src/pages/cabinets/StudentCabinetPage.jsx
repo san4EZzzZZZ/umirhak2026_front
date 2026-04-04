@@ -1,15 +1,19 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import QRCode from "qrcode";
 import * as studentDiplomaApi from "../../api/studentDiplomaApi.js";
 import * as universityRegistryApi from "../../api/universityRegistryApi.js";
 import CabinetShell from "../../components/CabinetShell.jsx";
+import { DGTU_SFU_BRANCH_NAMES } from "../../data/dgtuSfuBranches.js";
 import { ISLOD_VPO_UNIVERSITY_NAMES } from "../../data/islodVpoUniversities.js";
 import "./cabinet.css";
 
-/** Демо-реестр + перечень ВПО (Рособрнадзор ISLOD orgType=VPO; пересборка: node scripts/fetch_islod_vpo_universities.mjs) */
-const DIPLOMA_SEARCH_VUZ_OPTIONS = [...new Set(["Демо-университет", ...ISLOD_VPO_UNIVERSITY_NAMES])].sort((a, b) =>
-  a.localeCompare(b, "ru"),
-);
+/** Демо-реестр + ВПО (ISLOD) + филиалы ДГТУ/ЮФУ; пересборка ISLOD: node scripts/fetch_islod_vpo_universities.mjs */
+const DIPLOMA_SEARCH_VUZ_OPTIONS = [
+  ...new Set(["Демо-университет", ...ISLOD_VPO_UNIVERSITY_NAMES, ...DGTU_SFU_BRANCH_NAMES]),
+].sort((a, b) => a.localeCompare(b, "ru"));
+
+/** Макс. строк в выпадающем списке (защита от подвисаний при огромных выборках). */
+const VUZ_COMBO_MAX_VISIBLE = 3000;
 
 const GRADUATION_SEARCH_YEAR_MAX = new Date().getFullYear();
 const GRADUATION_SEARCH_YEAR_MIN = 1985;
@@ -50,6 +54,26 @@ export default function StudentCabinetPage() {
   const [diplomaSearchError, setDiplomaSearchError] = useState(null);
   const [diplomaSearchBusy, setDiplomaSearchBusy] = useState(false);
   const [gradYearInput, setGradYearInput] = useState("");
+  const [vuzInput, setVuzInput] = useState("");
+  const [vuzOpen, setVuzOpen] = useState(false);
+  const [vuzHighlight, setVuzHighlight] = useState(-1);
+  const vuzComboboxRef = useRef(null);
+  const vuzListRef = useRef(null);
+
+  const { vuzOptionsVisible, vuzOptionsTruncated } = useMemo(() => {
+    const q = vuzInput.trim().toLowerCase();
+    const all =
+      q.length === 0
+        ? DIPLOMA_SEARCH_VUZ_OPTIONS
+        : DIPLOMA_SEARCH_VUZ_OPTIONS.filter((n) => n.toLowerCase().includes(q));
+    if (all.length <= VUZ_COMBO_MAX_VISIBLE) {
+      return { vuzOptionsVisible: all, vuzOptionsTruncated: false };
+    }
+    return {
+      vuzOptionsVisible: all.slice(0, VUZ_COMBO_MAX_VISIBLE),
+      vuzOptionsTruncated: true,
+    };
+  }, [vuzInput]);
 
   useEffect(() => {
     let cancelled = false;
@@ -104,6 +128,30 @@ export default function StudentCabinetPage() {
     const t = setInterval(() => setNowTick(Date.now()), 1000);
     return () => clearInterval(t);
   }, [issued?.expiresAt]);
+
+  useEffect(() => {
+    setVuzHighlight(-1);
+  }, [vuzInput]);
+
+  useEffect(() => {
+    if (!vuzOpen) return undefined;
+    const onDocDown = (e) => {
+      if (vuzComboboxRef.current && !vuzComboboxRef.current.contains(e.target)) {
+        setVuzOpen(false);
+        setVuzHighlight(-1);
+      }
+    };
+    document.addEventListener("mousedown", onDocDown);
+    return () => document.removeEventListener("mousedown", onDocDown);
+  }, [vuzOpen]);
+
+  useEffect(() => {
+    if (!vuzOpen || vuzHighlight < 0 || !vuzListRef.current) return;
+    const ul = vuzListRef.current;
+    const li = ul.children[vuzHighlight];
+    const btn = li?.querySelector?.("button");
+    btn?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [vuzHighlight, vuzOpen]);
 
   const onSearch = async (e) => {
     e.preventDefault();
@@ -201,6 +249,18 @@ export default function StudentCabinetPage() {
   const remainingMs = issued?.expiresAt ? new Date(issued.expiresAt).getTime() - nowTick : 0;
   const linkExpired = issued && remainingMs <= 0;
 
+  /** Не даём колесу «уезжать» на страницу, пока в списке ещё есть куда скроллить. */
+  const onVuzListWheel = (e) => {
+    const el = e.currentTarget;
+    const { scrollTop, scrollHeight, clientHeight } = el;
+    if (scrollHeight <= clientHeight) return;
+    const dy = e.deltaY;
+    const atTop = scrollTop <= 0;
+    const atBottom = scrollTop + clientHeight >= scrollHeight - 2;
+    if ((dy < 0 && atTop) || (dy > 0 && atBottom)) return;
+    e.stopPropagation();
+  };
+
   return (
     <CabinetShell
       badge="Личный кабинет студента"
@@ -270,13 +330,20 @@ export default function StudentCabinetPage() {
         ) : null}
       </div>
 
-      <div className="cabinet-card admin-form-card" style={{ marginTop: "1rem" }}>
+      <div
+        className={`cabinet-card admin-form-card${vuzOpen ? " admin-form-card--vuz-dropdown-active" : ""}`}
+        style={{ marginTop: "1rem" }}
+      >
         <h2 className="cabinet-card__title">Поиск диплома</h2>
         <p className="cabinet-card__hint" style={{ marginBottom: "0.85rem" }}>
-          Номер диплома — из подсказок реестра или вручную. Название вуза — выпадающий список организаций ВПО (выгрузка с
-          портала Рособрнадзора ISLOD, см. scripts/fetch_islod_vpo_universities.mjs). Дата окончания — год (
-          {GRADUATION_SEARCH_YEAR_MIN}–{GRADUATION_SEARCH_YEAR_MAX}): до четырёх цифр или стрелки справа. Демо: фильтрация по
-          локальному реестру. Kotlin: GET /api/v1/university/diplomas/search.
+          Номер диплома — из подсказок реестра или вручную. Название вуза — введите текст или листайте подсказки стрелками{" "}
+          <kbd className="student-vuz-kbd">↑</kbd> <kbd className="student-vuz-kbd">↓</kbd> (по кругу),{" "}
+          <kbd className="student-vuz-kbd">Enter</kbd> — выбрать, <kbd className="student-vuz-kbd">Esc</kbd> — закрыть
+          список; <kbd className="student-vuz-kbd">PgUp</kbd>/<kbd className="student-vuz-kbd">PgDn</kbd>,{" "}
+          <kbd className="student-vuz-kbd">Home</kbd>/<kbd className="student-vuz-kbd">End</kbd> — быстрый переход по
+          длинному списку; колесо мыши над списком прокручивает строки (полоса справа). Перечень ВПО: ISLOD (см. scripts/fetch_islod_vpo_universities.mjs). Дата
+          окончания — год ({GRADUATION_SEARCH_YEAR_MIN}–{GRADUATION_SEARCH_YEAR_MAX}): до четырёх цифр или стрелки справа.
+          Демо: фильтрация по локальному реестру. Kotlin: GET /api/v1/university/diplomas/search.
         </p>
         {diplomaSearchError ? (
           <p className="auth-error" role="alert">
@@ -296,15 +363,129 @@ export default function StudentCabinetPage() {
               />
             </label>
             <label className="cabinet-field admin-user-form__full">
-              <span className="cabinet-field__label">Название вуза</span>
-              <select className="cabinet-field__input" name="searchUniversity" defaultValue="">
-                <option value="">Не указывать</option>
-                {DIPLOMA_SEARCH_VUZ_OPTIONS.map((name) => (
-                  <option key={name} value={name}>
-                    {name}
-                  </option>
-                ))}
-              </select>
+              <span className="cabinet-field__label" id="student-vuz-combobox-label">
+                Название вуза
+              </span>
+              <div className="student-vuz-combobox" ref={vuzComboboxRef}>
+                <div className="student-vuz-combobox__wrap">
+                  <input
+                    className="cabinet-field__input student-vuz-combobox__input"
+                    name="searchUniversity"
+                    id="student-vuz-combobox-input"
+                    autoComplete="off"
+                    placeholder="Введите название — появятся подсказки из списка ВПО"
+                    aria-autocomplete="list"
+                    aria-expanded={vuzOpen}
+                    aria-controls="student-vuz-combobox-list"
+                    aria-labelledby="student-vuz-combobox-label"
+                    role="combobox"
+                    title="Подсказки: стрелки ↑↓ — листать по кругу, Enter — выбрать, Esc — закрыть, PgUp/PgDn, Home/End"
+                    value={vuzInput}
+                    onChange={(e) => {
+                      setVuzInput(e.target.value);
+                      setVuzOpen(true);
+                    }}
+                    onFocus={() => setVuzOpen(true)}
+                    onKeyDown={(e) => {
+                      const len = vuzOptionsVisible.length;
+                      const pageStep = 12;
+
+                      if (e.key === "ArrowDown") {
+                        if (len === 0) return;
+                        e.preventDefault();
+                        setVuzOpen(true);
+                        setVuzHighlight((h) => {
+                          if (h < 0) return 0;
+                          return h >= len - 1 ? 0 : h + 1;
+                        });
+                      } else if (e.key === "ArrowUp") {
+                        if (len === 0) return;
+                        e.preventDefault();
+                        setVuzOpen(true);
+                        setVuzHighlight((h) => {
+                          if (h <= 0) return len - 1;
+                          return h - 1;
+                        });
+                      } else if (e.key === "PageDown" && len > 0) {
+                        e.preventDefault();
+                        setVuzOpen(true);
+                        setVuzHighlight((h) => {
+                          const cur = h < 0 ? 0 : h;
+                          return Math.min(len - 1, cur + pageStep);
+                        });
+                      } else if (e.key === "PageUp" && len > 0) {
+                        e.preventDefault();
+                        setVuzOpen(true);
+                        setVuzHighlight((h) => {
+                          const cur = h < 0 ? len - 1 : h;
+                          return Math.max(0, cur - pageStep);
+                        });
+                      } else if (e.key === "Home" && len > 0 && vuzOpen) {
+                        e.preventDefault();
+                        setVuzHighlight(0);
+                      } else if (e.key === "End" && len > 0 && vuzOpen) {
+                        e.preventDefault();
+                        setVuzHighlight(len - 1);
+                      } else if (e.key === "Enter" && vuzOpen && vuzHighlight >= 0 && vuzOptionsVisible[vuzHighlight]) {
+                        e.preventDefault();
+                        setVuzInput(vuzOptionsVisible[vuzHighlight]);
+                        setVuzOpen(false);
+                        setVuzHighlight(-1);
+                      } else if (e.key === "Escape" && vuzOpen) {
+                        e.preventDefault();
+                        setVuzOpen(false);
+                        setVuzHighlight(-1);
+                      }
+                    }}
+                  />
+                  {vuzOpen ? (
+                    <div
+                      className="student-vuz-combobox__panel"
+                      id="student-vuz-combobox-list"
+                      role="listbox"
+                      aria-label="Подсказки: названия вузов"
+                    >
+                      {vuzOptionsVisible.length > 0 ? (
+                        <ul
+                          className="student-vuz-combobox__list"
+                          ref={vuzListRef}
+                          onWheel={onVuzListWheel}
+                        >
+                          {vuzOptionsVisible.map((name, i) => (
+                            <li key={`${name}-${i}`}>
+                              <button
+                                type="button"
+                                className={`student-vuz-combobox__option${i === vuzHighlight ? " student-vuz-combobox__option--active" : ""}`}
+                                role="option"
+                                aria-selected={i === vuzHighlight}
+                                onMouseEnter={() => setVuzHighlight(i)}
+                                onMouseDown={(ev) => {
+                                  ev.preventDefault();
+                                  setVuzInput(name);
+                                  setVuzOpen(false);
+                                  setVuzHighlight(-1);
+                                }}
+                              >
+                                {name}
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : null}
+                      {vuzOptionsTruncated ? (
+                        <p className="student-vuz-combobox__trunc">
+                          Показаны первые {VUZ_COMBO_MAX_VISIBLE} совпадений — уточните название.
+                        </p>
+                      ) : null}
+                      {vuzOptionsVisible.length === 0 && vuzInput.trim().length > 0 ? (
+                        <p className="student-vuz-combobox__empty">
+                          Нет совпадений в списке ВПО — поиск выполнится по введённому тексту.
+                        </p>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
+              </div>
             </label>
             <label className="cabinet-field admin-user-form__full">
               <span className="cabinet-field__label" id="grad-year-label">
