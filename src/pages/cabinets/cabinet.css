@@ -444,6 +444,23 @@
   margin-bottom: 0;
 }
 
+.cabinet-upload-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.cabinet-upload-card__form {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.cabinet-upload-card__actions {
+  margin-top: auto;
+  padding-top: 0.85rem;
+}
+
 .cabinet-diploma-search-row {
   display: flex;
   flex-wrap: wrap;

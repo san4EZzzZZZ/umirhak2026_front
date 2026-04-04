@@ -209,6 +209,10 @@ body {
   letter-spacing: -0.02em;
 }
 
+.auth-title--login {
+  margin-bottom: 1rem;
+}
+
 .auth-title--application-success {
   margin-bottom: 3.6rem;
 }

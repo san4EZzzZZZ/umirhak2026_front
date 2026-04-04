@@ -298,7 +298,7 @@ export default function UniversityCabinetPage() {
       <h2 className="cabinet-section-title cabinet-section-title--balanced">Загрузка в реестр</h2>
 
       <div className="cabinet-grid cabinet-grid--2">
-        <div className="cabinet-card admin-form-card">
+        <div className="cabinet-card admin-form-card cabinet-upload-card">
           <h3 className="cabinet-card__title">Добавить один диплом</h3>
           <p className="cabinet-card__hint" style={{ marginBottom: "0.85rem" }}>
             После заполнения откроется шаг подписи КЭП, затем запись сохранится в реестре.
@@ -308,7 +308,7 @@ export default function UniversityCabinetPage() {
               {diplomaFormError}
             </p>
           ) : null}
-          <form className="admin-user-form" onSubmit={onGoToCapSign}>
+          <form className="admin-user-form cabinet-upload-card__form" onSubmit={onGoToCapSign}>
             <div className="admin-user-form__grid">
               <label className="cabinet-field">
                 <span className="cabinet-field__label">ФИО</span>
@@ -327,7 +327,7 @@ export default function UniversityCabinetPage() {
                 <input className="cabinet-field__input" name="diplomaNumber" required placeholder="ВСГ 1234567" />
               </label>
             </div>
-            <div className="cabinet-actions" style={{ marginTop: "0.85rem" }}>
+            <div className="cabinet-actions cabinet-upload-card__actions">
               <button type="submit" className="btn btn--primary" disabled={busy}>
                 <span className="btn__shine" aria-hidden="true" />
                 <span className="btn__label">Подписать</span>
@@ -336,16 +336,10 @@ export default function UniversityCabinetPage() {
           </form>
         </div>
 
-        <div className="cabinet-card admin-form-card">
+        <div className="cabinet-card admin-form-card cabinet-upload-card">
           <h3 className="cabinet-card__title">Массовая загрузка</h3>
           <p className="cabinet-card__hint" style={{ marginBottom: "0.85rem" }}>
             Загрузите файл, затем подпишите все записи одним приватным ключом КЭП.
-          </p>
-          <p className="cabinet-card__hint" style={{ marginBottom: "0.75rem" }}>
-            Шаблон на 5 дипломов:{" "}
-            <a href="/demo-keys/diplomas_bulk_5.csv" download>
-              скачать CSV
-            </a>
           </p>
           <label className="cabinet-field">
             <span className="cabinet-field__label">Файл</span>
@@ -370,7 +364,7 @@ export default function UniversityCabinetPage() {
               {bulkPreview.errors.length > 12 ? <li>… и ещё {bulkPreview.errors.length - 12} сообщений</li> : null}
             </ul>
           ) : null}
-          <div className="cabinet-actions" style={{ marginTop: "0.85rem" }}>
+          <div className="cabinet-actions cabinet-upload-card__actions">
             <button type="button" className="btn btn--primary" disabled={busy || bulkPreview.rows.length === 0} onClick={onOpenBulkModal}>
               <span className="btn__shine" aria-hidden="true" />
               <span className="btn__label">Импортировать{bulkPreview.rows.length ? ` (${bulkPreview.rows.length})` : ""}</span>
@@ -381,7 +375,7 @@ export default function UniversityCabinetPage() {
 
       <h2 className="cabinet-section-title">Поиск по номеру диплома</h2>
       <p className="cabinet-section-lead">
-        Введите номер так, как он указан в реестре. Поиск выполняется строго с учётом регистра.
+        Введите номер так, как он указан в дипломе. Поиск выполняется строго с учётом регистра.
       </p>
       <div className="cabinet-card admin-form-card" style={{ marginTop: "0.75rem" }}>
         <h3 className="cabinet-card__title">Найти и аннулировать</h3>

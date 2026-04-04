@@ -11,13 +11,13 @@ import { toSessionProfileFromFullName } from "./auth/sessionProfile.js";
 import { useSubmitRipple } from "./hooks/useSubmitRipple.js";
 
 const ROLES = [
-  { id: "student", label: "Студент", tabId: "tab-student", registerPath: "/register/student" },
+  { id: "student", label: "Выпускник", tabId: "tab-student", registerPath: "/register/student" },
   { id: "employer", label: "HR работодатель", tabId: "tab-employer", registerPath: "/register/hr" },
 ];
 
 const ROLE_COPY = {
   student: "Просмотр своих данных и выпуск QR-кода или ссылки для проверки.",
-  employer: "Поиск по реестру, проверка по QR и работа с обращениями.",
+  employer: "Поиск по реестру дипломов и их проверка по QR.",
 };
 
 export default function LoginPage() {
@@ -124,23 +124,9 @@ export default function LoginPage() {
       <section className="auth-card" aria-labelledby="auth-title">
         <div className="auth-card__glow" aria-hidden="true" />
 
-        <h1 id="auth-title" className="auth-title">
+        <h1 id="auth-title" className="auth-title auth-title--login">
           Вход в личный кабинет
         </h1>
-        <p className="auth-subtitle">
-          Выберите роль и войдите с учётными данными. Представители ВУЗов проходят вход на{" "}
-          <Link to="/login/vuz" className="auth-subtitle__link">
-            отдельной странице
-          </Link>
-          .
-        </p>
-
-        <p className="auth-crosslink auth-crosslink--top">
-          <Link to="/login/vuz" className="link-muted">
-            Вход для ВУЗа →
-          </Link>
-        </p>
-
         <div className="role-tabs role-tabs--two" role="tablist" aria-label="Тип пользователя">
           {ROLES.map((role, index) => (
             <button
@@ -179,7 +165,7 @@ export default function LoginPage() {
           <input type="hidden" name="role" value={activeRole} />
 
           <label className="field">
-            <span className="field__label">Email или логин</span>
+            <span className="field__label">Email</span>
             <input
               type="email"
               name="login"
@@ -203,7 +189,7 @@ export default function LoginPage() {
             <label className="checkbox">
               <input type="checkbox" name="remember" defaultChecked />
               <span className="checkbox__box" aria-hidden="true" />
-              <span>Запомнить устройство (сохранять после закрытия браузера)</span>
+              <span>Запомнить меня</span>
             </label>
             <Link to={`/login/forgot-password?role=${activeRole}`} className="link-muted">
               Забыли пароль?
@@ -221,16 +207,11 @@ export default function LoginPage() {
             Нет аккаунта? Зарегистрироваться
           </Link>
         </p>
-
-        <DemoCredentialsPanel />
-
         <p className="auth-crosslink">
           <Link to="/" className="link-muted">
             ← На главную
           </Link>
         </p>
-
-        <p className="footer-note">Нет доступа? Обратитесь к администратору вашей организации.</p>
       </section>
     </AuthShell>
   );
