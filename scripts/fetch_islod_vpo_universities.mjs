@@ -13,6 +13,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { DGTU_SFU_BRANCH_NAMES } from "../src/data/dgtuSfuBranches.js";
+import { MGU_BRANCH_NAMES } from "../src/data/mguBranches.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, "..");
@@ -128,14 +129,14 @@ async function loadFallback() {
 try {
   const fromApi = await fetchFromIslod();
   writeModule(
-    [...fromApi, ...DGTU_SFU_BRANCH_NAMES],
-    "Источник: API https://islod.obrnadzor.gov.ru/rlic/api/search (orgType=VPO) + филиалы ДГТУ/ЮФУ (src/data/dgtuSfuBranches.js). Пересборка: node scripts/fetch_islod_vpo_universities.mjs",
+    [...fromApi, ...DGTU_SFU_BRANCH_NAMES, ...MGU_BRANCH_NAMES],
+    "Источник: API https://islod.obrnadzor.gov.ru/rlic/api/search (orgType=VPO) + филиалы ДГТУ/ЮФУ (dgtuSfuBranches.js) + МГУ (mguBranches.js). Пересборка: node scripts/fetch_islod_vpo_universities.mjs",
   );
 } catch (e) {
   console.warn("ISLOD недоступен, используется локальный запасной список:", e.message);
   const fb = await loadFallback();
   writeModule(
-    [...fb, ...DGTU_SFU_BRANCH_NAMES],
-    "Запасной список: russianUniversities, vuzList, tmp_wiki_vuz, txt-файлы + филиалы ДГТУ/ЮФУ (dgtuSfuBranches.js). Полная выгрузка: node scripts/fetch_islod_vpo_universities.mjs (когда API доступен).",
+    [...fb, ...DGTU_SFU_BRANCH_NAMES, ...MGU_BRANCH_NAMES],
+    "Запасной список: russianUniversities, vuzList, tmp_wiki_vuz, txt-файлы + филиалы ДГТУ/ЮФУ (dgtuSfuBranches.js) + МГУ (mguBranches.js). Полная выгрузка: node scripts/fetch_islod_vpo_universities.mjs (когда API доступен).",
   );
 }

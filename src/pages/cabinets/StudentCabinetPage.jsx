@@ -5,11 +5,17 @@ import * as universityRegistryApi from "../../api/universityRegistryApi.js";
 import CabinetShell from "../../components/CabinetShell.jsx";
 import { DGTU_SFU_BRANCH_NAMES } from "../../data/dgtuSfuBranches.js";
 import { ISLOD_VPO_UNIVERSITY_NAMES } from "../../data/islodVpoUniversities.js";
+import { MGU_BRANCH_NAMES } from "../../data/mguBranches.js";
 import "./cabinet.css";
 
-/** Демо-реестр + ВПО (ISLOD) + филиалы ДГТУ/ЮФУ; пересборка ISLOD: node scripts/fetch_islod_vpo_universities.mjs */
+/** Демо-реестр + ВПО (ISLOD) + филиалы ДГТУ/ЮФУ + МГУ; пересборка ISLOD: node scripts/fetch_islod_vpo_universities.mjs */
 const DIPLOMA_SEARCH_VUZ_OPTIONS = [
-  ...new Set(["Демо-университет", ...ISLOD_VPO_UNIVERSITY_NAMES, ...DGTU_SFU_BRANCH_NAMES]),
+  ...new Set([
+    "Демо-университет",
+    ...ISLOD_VPO_UNIVERSITY_NAMES,
+    ...DGTU_SFU_BRANCH_NAMES,
+    ...MGU_BRANCH_NAMES,
+  ]),
 ].sort((a, b) => a.localeCompare(b, "ru"));
 
 /** Макс. строк в выпадающем списке (защита от подвисаний при огромных выборках). */
