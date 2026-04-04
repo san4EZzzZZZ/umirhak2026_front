@@ -584,12 +584,28 @@ body {
 }
 
 .auth-error {
-  margin: 0 0 0.85rem;
-  padding: 0.6rem 0.85rem;
+  margin: 0;
+  padding: 0 0.85rem;
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-6px);
+  overflow: hidden;
   border-radius: 10px;
   font-size: 0.82rem;
   line-height: 1.4;
   color: #ffc9d4;
+  background: rgba(224, 17, 95, 0);
+  border: 1px solid rgba(224, 17, 95, 0);
+  transition: max-height 0.28s ease, opacity 0.24s ease, transform 0.24s ease, margin 0.28s ease, padding 0.28s ease,
+    background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.auth-error.is-visible {
+  margin: 0 0 0.85rem;
+  padding: 0.6rem 0.85rem;
+  max-height: 120px;
+  opacity: 1;
+  transform: translateY(0);
   background: rgba(224, 17, 95, 0.14);
   border: 1px solid rgba(224, 17, 95, 0.35);
 }
@@ -668,7 +684,8 @@ body {
   .blob,
   .btn__shine,
   .btn--primary,
-  .btn--secondary {
+  .btn--secondary,
+  .auth-error {
     animation: none;
     transition: none;
   }

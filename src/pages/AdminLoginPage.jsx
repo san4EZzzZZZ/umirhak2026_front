@@ -73,11 +73,14 @@ export default function AdminLoginPage() {
           администраторов — те же учётные данные вводятся на этой странице.
         </p>
 
-        {authError ? (
-          <p className="auth-error" role="alert">
-            {authError}
-          </p>
-        ) : null}
+        <p
+          className={`auth-error${authError ? " is-visible" : ""}`}
+          role={authError ? "alert" : undefined}
+          aria-live="polite"
+          aria-hidden={!authError}
+        >
+          {authError ?? ""}
+        </p>
 
         <form className="auth-form" onSubmit={onSubmit} noValidate>
           <input type="hidden" name="role" value="admin" />
