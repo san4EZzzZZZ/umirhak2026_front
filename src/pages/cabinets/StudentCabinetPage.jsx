@@ -3,11 +3,13 @@ import QRCode from "qrcode";
 import * as studentDiplomaApi from "../../api/studentDiplomaApi.js";
 import * as universityRegistryApi from "../../api/universityRegistryApi.js";
 import CabinetShell from "../../components/CabinetShell.jsx";
-import { VUZ_LIST_NAMES } from "../../data/vuzList.js";
+import { ISLOD_VPO_UNIVERSITY_NAMES } from "../../data/islodVpoUniversities.js";
 import "./cabinet.css";
 
-/** Демо-реестр использует короткое имя вуза; плюс полный список из vuz_list.txt */
-const DIPLOMA_SEARCH_VUZ_OPTIONS = [...new Set(["Демо-университет", ...VUZ_LIST_NAMES])];
+/** Демо-реестр + перечень ВПО (Рособрнадзор ISLOD orgType=VPO; пересборка: node scripts/fetch_islod_vpo_universities.mjs) */
+const DIPLOMA_SEARCH_VUZ_OPTIONS = [...new Set(["Демо-университет", ...ISLOD_VPO_UNIVERSITY_NAMES])].sort((a, b) =>
+  a.localeCompare(b, "ru"),
+);
 
 const GRADUATION_SEARCH_YEAR_MAX = new Date().getFullYear();
 const GRADUATION_SEARCH_YEAR_MIN = 1985;
@@ -271,10 +273,10 @@ export default function StudentCabinetPage() {
       <div className="cabinet-card admin-form-card" style={{ marginTop: "1rem" }}>
         <h2 className="cabinet-card__title">Поиск диплома</h2>
         <p className="cabinet-card__hint" style={{ marginBottom: "0.85rem" }}>
-          Номер диплома и вуз можно выбрать из подсказок или ввести вручную. Дата окончания — год (
-          {GRADUATION_SEARCH_YEAR_MIN}–{GRADUATION_SEARCH_YEAR_MAX}): введите до четырёх цифр или пользуйтесь стрелками
-          справа. Демо: фильтрация по локальному реестру. Kotlin: GET /api/v1/university/diplomas/search (по спецификации
-          бэкенда).
+          Номер диплома — из подсказок реестра или вручную. Название вуза — выпадающий список организаций ВПО (выгрузка с
+          портала Рособрнадзора ISLOD, см. scripts/fetch_islod_vpo_universities.mjs). Дата окончания — год (
+          {GRADUATION_SEARCH_YEAR_MIN}–{GRADUATION_SEARCH_YEAR_MAX}): до четырёх цифр или стрелки справа. Демо: фильтрация по
+          локальному реестру. Kotlin: GET /api/v1/university/diplomas/search.
         </p>
         {diplomaSearchError ? (
           <p className="auth-error" role="alert">
@@ -295,13 +297,14 @@ export default function StudentCabinetPage() {
             </label>
             <label className="cabinet-field admin-user-form__full">
               <span className="cabinet-field__label">Название вуза</span>
-              <input
-                className="cabinet-field__input"
-                name="searchUniversity"
-                list="student-diploma-search-vuz-presets"
-                autoComplete="off"
-                placeholder="Демо-университет или свой вариант"
-              />
+              <select className="cabinet-field__input" name="searchUniversity" defaultValue="">
+                <option value="">Не указывать</option>
+                {DIPLOMA_SEARCH_VUZ_OPTIONS.map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </select>
             </label>
             <label className="cabinet-field admin-user-form__full">
               <span className="cabinet-field__label" id="grad-year-label">
@@ -352,11 +355,6 @@ export default function StudentCabinetPage() {
           <datalist id="student-diploma-search-number-suggestions">
             {registryDiplomas.map((d) => (
               <option key={d.id} value={d.diplomaNumber} />
-            ))}
-          </datalist>
-          <datalist id="student-diploma-search-vuz-presets">
-            {DIPLOMA_SEARCH_VUZ_OPTIONS.map((name) => (
-              <option key={name} value={name} />
             ))}
           </datalist>
           <div className="cabinet-actions" style={{ marginTop: "0.85rem" }}>
