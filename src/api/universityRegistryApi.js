@@ -121,3 +121,50 @@ export async function addDiplomaRecordsBulk(rows) {
   writeDiplomas([...newOnes, ...existing]);
   return Promise.resolve({ added: newOnes.length });
 }
+
+const DEFAULT_VUZ_NAME = "Демо-университет";
+
+function recordUniversity(r) {
+  return String(r.universityName ?? DEFAULT_VUZ_NAME).trim();
+}
+
+/** Год из поля «дата окончания»: 2025, 30.06.2025, 2025-06-30 и т.п. */
+function yearFromGraduationInput(raw) {
+  const s = String(raw ?? "").trim();
+  if (!s) return null;
+  const four = s.match(/\b(19|20)\d{2}\b/);
+  if (four) return Number(four[0]);
+  return null;
+}
+
+/**
+ * Поиск в локальном демо-реестре (Kotlin: GET с фильтрами).
+ * Пустые критерии не участвуют в фильтрации.
+ *
+ * @param {{ diplomaNumber?: string, universityName?: string, graduationDate?: string }} criteria
+ * @returns {Promise<(DiplomaRecordDto & { universityName: string })[]>}
+ */
+export async function searchDiplomaRecords(criteria) {
+  void API_BASE_URL;
+  void kotlinApiHeaders;
+  const records = readDiplomas();
+  const dn = String(criteria?.diplomaNumber ?? "").trim().toLowerCase();
+  const uni = String(criteria?.universityName ?? "").trim().toLowerCase();
+  const gd = String(criteria?.graduationDate ?? "").trim();
+  const year = yearFromGraduationInput(gd);
+
+  await new Promise((r) => setTimeout(r, 200));
+
+  const filtered = records.filter((r) => {
+    if (dn && !String(r.diplomaNumber).toLowerCase().includes(dn)) return false;
+    const rUni = recordUniversity(r).toLowerCase();
+    if (uni && !rUni.includes(uni)) return false;
+    if (year != null && Number(r.year) !== year) return false;
+    return true;
+  });
+
+  return filtered.map((r) => ({
+    ...r,
+    universityName: recordUniversity(r),
+  }));
+}

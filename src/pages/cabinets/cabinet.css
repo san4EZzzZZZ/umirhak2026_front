@@ -302,6 +302,21 @@
   box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
+/* Год окончания: видимые стрелки number input (spinner) */
+input.cabinet-field__input--year[type="number"] {
+  appearance: auto;
+  max-width: 11rem;
+  padding-right: 0.5rem;
+}
+
+input.cabinet-field__input--year[type="number"]::-webkit-outer-spin-button,
+input.cabinet-field__input--year[type="number"]::-webkit-inner-spin-button {
+  opacity: 1;
+  cursor: pointer;
+  height: 2.25rem;
+  margin: 0;
+}
+
 .cabinet-field__password-wrap {
   position: relative;
   display: flex;

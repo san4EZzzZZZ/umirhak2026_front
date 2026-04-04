@@ -1,8 +1,16 @@
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import * as studentDiplomaApi from "../../api/studentDiplomaApi.js";
+import * as universityRegistryApi from "../../api/universityRegistryApi.js";
 import CabinetShell from "../../components/CabinetShell.jsx";
+import { VUZ_LIST_NAMES } from "../../data/vuzList.js";
 import "./cabinet.css";
+
+/** Демо-реестр использует короткое имя вуза; плюс полный список из vuz_list.txt */
+const DIPLOMA_SEARCH_VUZ_OPTIONS = [...new Set(["Демо-университет", ...VUZ_LIST_NAMES])];
+
+const GRADUATION_SEARCH_YEAR_MAX = new Date().getFullYear();
+const GRADUATION_SEARCH_YEAR_MIN = 1985;
 
 function formatRemaining(ms) {
   if (ms <= 0) return "истекло";
@@ -34,6 +42,12 @@ export default function StudentCabinetPage() {
   const [shareBusy, setShareBusy] = useState(false);
   const [copyHint, setCopyHint] = useState("");
   const [nowTick, setNowTick] = useState(() => Date.now());
+  const [registryDiplomas, setRegistryDiplomas] = useState([]);
+  const [diplomaSearchResults, setDiplomaSearchResults] = useState([]);
+  const [diplomaSearchMessage, setDiplomaSearchMessage] = useState(null);
+  const [diplomaSearchError, setDiplomaSearchError] = useState(null);
+  const [diplomaSearchBusy, setDiplomaSearchBusy] = useState(false);
+  const [gradYearInput, setGradYearInput] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -44,6 +58,17 @@ export default function StudentCabinetPage() {
       } finally {
         if (!cancelled) setLoading(false);
       }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const list = await universityRegistryApi.listDiplomaRecords();
+      if (!cancelled) setRegistryDiplomas(list);
     })();
     return () => {
       cancelled = true;
@@ -97,6 +122,48 @@ export default function StudentCabinetPage() {
       }
     } finally {
       setSearchBusy(false);
+    }
+  };
+
+  const onDiplomaSearch = async (e) => {
+    e.preventDefault();
+    setDiplomaSearchError(null);
+    setDiplomaSearchMessage(null);
+    const fd = new FormData(e.currentTarget);
+    const diplomaNumber = fd.get("searchDiplomaNumber")?.toString() ?? "";
+    const universityName = fd.get("searchUniversity")?.toString() ?? "";
+    const graduationDate = gradYearInput.trim();
+    if (graduationDate.length > 0) {
+      if (graduationDate.length !== 4) {
+        setDiplomaSearchError("Дата окончания: укажите полный четырёхзначный год (например, 2025).");
+        setDiplomaSearchResults([]);
+        return;
+      }
+      const y = Number(graduationDate);
+      if (y < GRADUATION_SEARCH_YEAR_MIN || y > GRADUATION_SEARCH_YEAR_MAX) {
+        setDiplomaSearchError(
+          `Год окончания: допустимы значения ${GRADUATION_SEARCH_YEAR_MIN}–${GRADUATION_SEARCH_YEAR_MAX}.`,
+        );
+        setDiplomaSearchResults([]);
+        return;
+      }
+    }
+    if (!diplomaNumber.trim() && !universityName.trim() && !graduationDate) {
+      setDiplomaSearchError("Укажите хотя бы один критерий поиска.");
+      setDiplomaSearchResults([]);
+      return;
+    }
+    setDiplomaSearchBusy(true);
+    try {
+      const rows = await universityRegistryApi.searchDiplomaRecords({
+        diplomaNumber,
+        universityName,
+        graduationDate,
+      });
+      setDiplomaSearchResults(rows);
+      setDiplomaSearchMessage(`Найдено записей: ${rows.length}`);
+    } finally {
+      setDiplomaSearchBusy(false);
     }
   };
 
@@ -198,6 +265,137 @@ export default function StudentCabinetPage() {
           >
             {searchMessage.text}
           </p>
+        ) : null}
+      </div>
+
+      <div className="cabinet-card admin-form-card" style={{ marginTop: "1rem" }}>
+        <h2 className="cabinet-card__title">Поиск диплома</h2>
+        <p className="cabinet-card__hint" style={{ marginBottom: "0.85rem" }}>
+          Номер диплома и вуз можно выбрать из подсказок или ввести вручную. Дата окончания — год (
+          {GRADUATION_SEARCH_YEAR_MIN}–{GRADUATION_SEARCH_YEAR_MAX}): введите до четырёх цифр или пользуйтесь стрелками
+          справа. Демо: фильтрация по локальному реестру. Kotlin: GET /api/v1/university/diplomas/search (по спецификации
+          бэкенда).
+        </p>
+        {diplomaSearchError ? (
+          <p className="auth-error" role="alert">
+            {diplomaSearchError}
+          </p>
+        ) : null}
+        <form className="admin-user-form" onSubmit={onDiplomaSearch}>
+          <div className="admin-user-form__grid">
+            <label className="cabinet-field admin-user-form__full">
+              <span className="cabinet-field__label">Номер диплома</span>
+              <input
+                className="cabinet-field__input"
+                name="searchDiplomaNumber"
+                list="student-diploma-search-number-suggestions"
+                autoComplete="off"
+                placeholder="ВСГ 1234567 или выберите из списка"
+              />
+            </label>
+            <label className="cabinet-field admin-user-form__full">
+              <span className="cabinet-field__label">Название вуза</span>
+              <input
+                className="cabinet-field__input"
+                name="searchUniversity"
+                list="student-diploma-search-vuz-presets"
+                autoComplete="off"
+                placeholder="Демо-университет или свой вариант"
+              />
+            </label>
+            <label className="cabinet-field admin-user-form__full">
+              <span className="cabinet-field__label" id="grad-year-label">
+                Дата окончания
+              </span>
+              <input
+                className="cabinet-field__input cabinet-field__input--year"
+                type="number"
+                name="searchGraduationDate"
+                id="grad-year-input"
+                inputMode="numeric"
+                autoComplete="off"
+                min={GRADUATION_SEARCH_YEAR_MIN}
+                max={GRADUATION_SEARCH_YEAR_MAX}
+                step={1}
+                placeholder={`${GRADUATION_SEARCH_YEAR_MIN}–${GRADUATION_SEARCH_YEAR_MAX}`}
+                aria-labelledby="grad-year-label"
+                title={`Год ${GRADUATION_SEARCH_YEAR_MIN}–${GRADUATION_SEARCH_YEAR_MAX}. Стрелки меняют год, ввод — не более 4 цифр.`}
+                value={gradYearInput}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  if (raw === "") {
+                    setGradYearInput("");
+                    return;
+                  }
+                  const digits = raw.replace(/\D/g, "").slice(0, 4);
+                  setGradYearInput(digits);
+                }}
+                onKeyDown={(e) => {
+                  if (["e", "E", "+", "-", "."].includes(e.key)) {
+                    e.preventDefault();
+                  }
+                }}
+                onBlur={(e) => {
+                  const digits = e.target.value.replace(/\D/g, "").slice(0, 4);
+                  if (digits.length !== 4) return;
+                  const n = Number(digits);
+                  if (Number.isNaN(n)) return;
+                  const c = Math.min(
+                    GRADUATION_SEARCH_YEAR_MAX,
+                    Math.max(GRADUATION_SEARCH_YEAR_MIN, n),
+                  );
+                  setGradYearInput(String(c));
+                }}
+              />
+            </label>
+          </div>
+          <datalist id="student-diploma-search-number-suggestions">
+            {registryDiplomas.map((d) => (
+              <option key={d.id} value={d.diplomaNumber} />
+            ))}
+          </datalist>
+          <datalist id="student-diploma-search-vuz-presets">
+            {DIPLOMA_SEARCH_VUZ_OPTIONS.map((name) => (
+              <option key={name} value={name} />
+            ))}
+          </datalist>
+          <div className="cabinet-actions" style={{ marginTop: "0.85rem" }}>
+            <button type="submit" className="btn btn--primary" disabled={diplomaSearchBusy}>
+              <span className="btn__shine" aria-hidden="true" />
+              <span className="btn__label">{diplomaSearchBusy ? "Поиск…" : "Найти"}</span>
+            </button>
+          </div>
+        </form>
+        {diplomaSearchMessage ? (
+          <p className="cabinet-card__hint" style={{ marginTop: "0.65rem", color: "rgba(0, 242, 255, 0.85)" }}>
+            {diplomaSearchMessage}
+          </p>
+        ) : null}
+        {diplomaSearchResults.length > 0 ? (
+          <div className="cabinet-table-wrap" style={{ marginTop: "1rem" }}>
+            <table className="cabinet-table cabinet-table--admin">
+              <thead>
+                <tr>
+                  <th scope="col">ФИО</th>
+                  <th scope="col">Год</th>
+                  <th scope="col">Специальность</th>
+                  <th scope="col">Номер диплома</th>
+                  <th scope="col">Вуз</th>
+                </tr>
+              </thead>
+              <tbody>
+                {diplomaSearchResults.map((d) => (
+                  <tr key={d.id}>
+                    <td>{d.fullName}</td>
+                    <td>{d.year}</td>
+                    <td>{d.specialty}</td>
+                    <td>{d.diplomaNumber}</td>
+                    <td>{d.universityName}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         ) : null}
       </div>
 
