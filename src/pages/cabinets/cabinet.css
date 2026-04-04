@@ -136,6 +136,88 @@
   color: var(--text-muted);
 }
 
+.cabinet-cap-flash {
+  margin: 0 0 1rem;
+  padding: 0.65rem 0.9rem;
+  border-radius: 10px;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  color: rgba(0, 242, 255, 0.92);
+  background: rgba(0, 242, 255, 0.08);
+  border: 1px solid rgba(0, 242, 255, 0.22);
+}
+
+.cabinet-cap-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: rgba(120, 255, 210, 0.95);
+  white-space: nowrap;
+}
+
+.cap-sign-back {
+  color: rgba(0, 242, 255, 0.88);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+
+.cap-sign-back:hover {
+  text-decoration: underline;
+}
+
+.cap-sign-card {
+  margin-top: 0.5rem;
+}
+
+.cap-sign-subtitle {
+  margin: 1.15rem 0 0.4rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: rgba(244, 246, 251, 0.9);
+}
+
+.cap-sign-dl {
+  margin: 0.75rem 0 0;
+  display: grid;
+  gap: 0.65rem 1.25rem;
+  grid-template-columns: 1fr 1fr;
+}
+
+@media (max-width: 560px) {
+  .cap-sign-dl {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cap-sign-dl__full {
+  grid-column: 1 / -1;
+}
+
+.cap-sign-dl dt {
+  margin: 0;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.cap-sign-dl dd {
+  margin: 0.2rem 0 0;
+  font-size: 0.88rem;
+  color: rgba(244, 246, 251, 0.95);
+  line-height: 1.35;
+}
+
+.cabinet-actions .cap-sign-cancel {
+  width: auto;
+  margin-top: 0;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .cabinet-table-title {
   margin: 0;
   padding: 0.75rem 1rem 0.5rem;

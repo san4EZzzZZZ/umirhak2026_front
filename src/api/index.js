@@ -8,5 +8,6 @@ export * from "./authApi.js";
 export * from "./adminUniversityUsersApi.js";
 export * from "./adminPlatformAdminsApi.js";
 export * from "./universityRegistryApi.js";
+export * from "./universityCapSigningApi.js";
 export * from "./studentDiplomaApi.js";
 export * from "./employerRegistryApi.js";

@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Outlet, Route, Routes } from "react-router-dom";
 import { AuthProvider } from "./auth/AuthContext.jsx";
 import { ROLES } from "./auth/authPaths.js";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
@@ -8,6 +8,7 @@ import UniversityLoginPage from "./pages/UniversityLoginPage.jsx";
 import EmployerCabinetPage from "./pages/cabinets/EmployerCabinetPage.jsx";
 import StudentCabinetPage from "./pages/cabinets/StudentCabinetPage.jsx";
 import UniversityCabinetPage from "./pages/cabinets/UniversityCabinetPage.jsx";
+import UniversityDiplomaSignPage from "./pages/cabinets/UniversityDiplomaSignPage.jsx";
 import AdminCabinetPage from "./pages/cabinets/AdminCabinetPage.jsx";
 import SuperAdminCabinetPage from "./pages/cabinets/SuperAdminCabinetPage.jsx";
 import AdminLoginPage from "./pages/AdminLoginPage.jsx";
@@ -33,10 +34,13 @@ export default function App() {
             path="/cabinet/vuz"
             element={
               <ProtectedRoute role={ROLES.university}>
-                <UniversityCabinetPage />
+                <Outlet />
               </ProtectedRoute>
             }
-          />
+          >
+            <Route index element={<UniversityCabinetPage />} />
+            <Route path="sign-diploma" element={<UniversityDiplomaSignPage />} />
+          </Route>
           <Route
             path="/cabinet/student"
             element={

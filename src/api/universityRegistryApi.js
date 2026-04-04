@@ -24,7 +24,18 @@ export async function getRegistryDashboardStats() {
 const DIPLOMA_STORAGE_KEY = "diasoft_vuz_diplomas_stub";
 
 /**
- * @typedef {{ id: string, fullName: string, year: number, specialty: string, diplomaNumber: string, createdAt: string }} DiplomaRecordDto
+ * @typedef {{
+ *   id: string,
+ *   fullName: string,
+ *   year: number,
+ *   specialty: string,
+ *   diplomaNumber: string,
+ *   createdAt: string,
+ *   signedAt?: string,
+ *   signatureBase64?: string,
+ *   capAlgorithm?: string,
+ *   signingKeyThumbprint?: string,
+ * }} DiplomaRecordDto
  */
 
 function readDiplomas() {
@@ -111,4 +122,40 @@ export async function annulDiplomaByNumber(diplomaNumber) {
   const [removed] = records.splice(idx, 1);
   writeDiplomas(records);
   return Promise.resolve({ removed: true, record: removed });
+}
+
+/**
+ * Сохраняет запись после подписи КЭП (демо: сразу в localStorage; Kotlin: после валидации подписи на сервере).
+ * @param {{
+ *   fullName: string,
+ *   year: number,
+ *   specialty: string,
+ *   diplomaNumber: string,
+ *   signatureBase64: string,
+ *   capAlgorithm: string,
+ *   signingKeyThumbprint: string,
+ *   signedAt: string,
+ * }} payload
+ * @returns {Promise<DiplomaRecordDto>}
+ */
+export async function commitSignedDiplomaRecord(payload) {
+  void API_BASE_URL;
+  void kotlinApiHeaders;
+  const records = readDiplomas();
+  const createdAt = new Date().toISOString();
+  const row = {
+    id: `dip-${Date.now()}`,
+    fullName: String(payload.fullName).trim(),
+    year: Number(payload.year),
+    specialty: String(payload.specialty).trim(),
+    diplomaNumber: String(payload.diplomaNumber).trim(),
+    createdAt,
+    signedAt: payload.signedAt,
+    signatureBase64: payload.signatureBase64,
+    capAlgorithm: payload.capAlgorithm,
+    signingKeyThumbprint: payload.signingKeyThumbprint,
+  };
+  records.unshift(row);
+  writeDiplomas(records);
+  return Promise.resolve(row);
 }

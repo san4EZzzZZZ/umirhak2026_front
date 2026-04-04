@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import * as universityRegistryApi from "../../api/universityRegistryApi.js";
 import { parseDiplomaImportFile } from "../../utils/parseDiplomaImport.js";
 import CabinetShell from "../../components/CabinetShell.jsx";
@@ -7,6 +8,9 @@ import "./cabinet.css";
 /** Данные с Kotlin-бэкенда: см. universityRegistryApi.js */
 
 export default function UniversityCabinetPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [capFlash, setCapFlash] = useState(null);
   const [stats, setStats] = useState({ pendingSignature: "—", inRegistry: "—" });
   const [diplomas, setDiplomas] = useState([]);
   const [busy, setBusy] = useState(false);
@@ -32,7 +36,20 @@ export default function UniversityCabinetPage() {
     load();
   }, [load]);
 
-  const onAddOneDiploma = async (e) => {
+  useEffect(() => {
+    if (location.state?.capSignedOk) {
+      setCapFlash("Запись подписана КЭП и добавлена в реестр.");
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state, location.pathname, navigate]);
+
+  useEffect(() => {
+    if (!capFlash) return undefined;
+    const id = setTimeout(() => setCapFlash(null), 9000);
+    return () => clearTimeout(id);
+  }, [capFlash]);
+
+  const onGoToCapSign = (e) => {
     e.preventDefault();
     setDiplomaFormError(null);
     const fd = new FormData(e.currentTarget);
@@ -49,16 +66,9 @@ export default function UniversityCabinetPage() {
       setDiplomaFormError("Укажите корректный год выпуска (1950–2100).");
       return;
     }
-    setBusy(true);
-    try {
-      await universityRegistryApi.addDiplomaRecord({ fullName, year, specialty, diplomaNumber });
-      e.currentTarget.reset();
-      await load();
-    } catch {
-      setDiplomaFormError("Не удалось сохранить запись.");
-    } finally {
-      setBusy(false);
-    }
+    navigate("/cabinet/vuz/sign-diploma", {
+      state: { draft: { fullName, year, specialty, diplomaNumber } },
+    });
   };
 
   const onBulkFileChange = async (e) => {
@@ -147,6 +157,11 @@ export default function UniversityCabinetPage() {
       title="Реестр дипломов"
       subtitle="Добавление и импорт записей о выпускниках для единого реестра проверки дипломов."
     >
+      {capFlash ? (
+        <p className="cabinet-cap-flash" role="status">
+          {capFlash}
+        </p>
+      ) : null}
       <div className="cabinet-grid cabinet-grid--stats">
         <div className="cabinet-card">
           <h2 className="cabinet-card__title">Ожидают подписи</h2>
@@ -220,14 +235,14 @@ export default function UniversityCabinetPage() {
         <div className="cabinet-card admin-form-card">
           <h3 className="cabinet-card__title">Добавить один диплом</h3>
           <p className="cabinet-card__hint" style={{ marginBottom: "0.85rem" }}>
-            Запись сохраняется локально в браузере (демо). Kotlin: POST /api/v1/university/diplomas.
+            После заполнения откроется шаг подписи КЭП (демо-ключ в браузере), затем запись сохранится в реестре. Массовый импорт — без КЭП.
           </p>
           {diplomaFormError ? (
             <p className="auth-error" role="alert">
               {diplomaFormError}
             </p>
           ) : null}
-          <form className="admin-user-form" onSubmit={onAddOneDiploma}>
+          <form className="admin-user-form" onSubmit={onGoToCapSign}>
             <div className="admin-user-form__grid">
               <label className="cabinet-field">
                 <span className="cabinet-field__label">ФИО</span>
@@ -262,7 +277,7 @@ export default function UniversityCabinetPage() {
             <div className="cabinet-actions" style={{ marginTop: "0.85rem" }}>
               <button type="submit" className="btn btn--primary" disabled={busy}>
                 <span className="btn__shine" aria-hidden="true" />
-                <span className="btn__label">Добавить в реестр</span>
+                <span className="btn__label">Подписать</span>
               </button>
             </div>
           </form>
@@ -324,13 +339,14 @@ export default function UniversityCabinetPage() {
               <th scope="col">Год</th>
               <th scope="col">Специальность</th>
               <th scope="col">Номер диплома</th>
+              <th scope="col">КЭП</th>
               <th scope="col">Добавлено</th>
             </tr>
           </thead>
           <tbody>
             {diplomas.length === 0 ? (
               <tr>
-                <td colSpan={5} style={{ color: "var(--text-muted)" }}>
+                <td colSpan={6} style={{ color: "var(--text-muted)" }}>
                   Пока нет записей — добавьте диплом вручную или импортируйте файл.
                 </td>
               </tr>
@@ -341,6 +357,15 @@ export default function UniversityCabinetPage() {
                   <td>{d.year}</td>
                   <td>{d.specialty}</td>
                   <td>{d.diplomaNumber}</td>
+                  <td>
+                    {d.signatureBase64 ? (
+                      <span className="cabinet-cap-badge" title={d.capAlgorithm ?? ""}>
+                        Подписано{d.signingKeyThumbprint ? ` · ${d.signingKeyThumbprint}` : ""}
+                      </span>
+                    ) : (
+                      <span style={{ color: "var(--text-muted)" }}>—</span>
+                    )}
+                  </td>
                   <td>{fmtDate(d.createdAt)}</td>
                 </tr>
               ))
