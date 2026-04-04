@@ -104,7 +104,7 @@ export default function RegisterByRolePage({ role }) {
     }
 
     const roleForLogin = safeRole === ROLES.employer ? "employer" : "student";
-    navigate(`/login?registered=1&role=${encodeURIComponent(roleForLogin)}&login=${encodeURIComponent(email)}`);
+    navigate(`/login?registered=1&role=${encodeURIComponent(roleForLogin)}&login=${encodeURIComponent(email)}`, { replace: true });
   };
 
   return (
@@ -140,17 +140,17 @@ export default function RegisterByRolePage({ role }) {
 
           <label className="field">
             <span className="field__label">Фамилия</span>
-            <input type="text" name="lastName" autoComplete="family-name" required className="field__input" />
+            <input type="text" name="lastName" autoComplete="family-name" required className="field__input" placeholder="Иванов" />
           </label>
 
           <label className="field">
             <span className="field__label">Имя</span>
-            <input type="text" name="firstName" autoComplete="given-name" required className="field__input" />
+            <input type="text" name="firstName" autoComplete="given-name" required className="field__input" placeholder="Иван" />
           </label>
 
           <label className="field">
             <span className="field__label">Отчество (если есть)</span>
-            <input type="text" name="middleName" autoComplete="additional-name" className="field__input" />
+            <input type="text" name="middleName" autoComplete="additional-name" className="field__input" placeholder="Иванович" />
           </label>
 
           <PasswordField
