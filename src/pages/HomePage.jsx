@@ -121,9 +121,6 @@ export default function HomePage() {
       <a href="#audience" className="top-bar__nav-link" onClick={smoothScrollTo}>
         Для кого
       </a>
-      <Link to="/login/vuz" className="top-bar__nav-link top-bar__nav-link--muted">
-        Вузам
-      </Link>
       {user ? (
         <Link to={cabinetPath} className="top-bar__nav-cta top-bar__nav-cta--cabinet">
           Личный кабинет
@@ -273,12 +270,12 @@ export default function HomePage() {
         <section className="landing-cta" aria-labelledby="landing-cta-title">
           <div className="landing-cta__inner">
             <h2 id="landing-cta-title" className="landing-cta__title">
-              {user ? "Продолжить работу в кабинете?" : "Готовы сократить путь от диплома до проверки?"}
+              {user ? "Продолжить работу в кабинете?" : "Авторизация для образовательных организаций"}
             </h2>
             <p className="landing-cta__text">
               {user
                 ? "Вы уже вошли в систему — откройте свой кабинет или изучите материалы на странице."
-                : "Выберите роль и войдите в демо-кабинет — интерфейс можно адаптировать под процессы вашей организации."}
+                : "Если вы представляете вуз или колледж, войдите в отдельный кабинет образовательной организации для работы с реестром дипломов."}
             </p>
             <div className="landing-cta__actions">
               {user ? (
@@ -290,10 +287,7 @@ export default function HomePage() {
                 <>
                   <Link to="/login/vuz" className="btn btn--primary landing-cta__btn">
                     <span className="btn__shine" aria-hidden="true" />
-                    <span className="btn__label">Начать с вуза</span>
-                  </Link>
-                  <Link to="/login" className="btn btn--secondary landing-cta__btn">
-                    <span className="btn__label">Войти как студент или HR</span>
+                    <span className="btn__label">Войти как ВУЗ</span>
                   </Link>
                 </>
               )}

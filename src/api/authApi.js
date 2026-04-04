@@ -24,6 +24,8 @@ async function readErrorMessage(res) {
       if (/login and password are required/i.test(raw)) return "Введите логин и пароль.";
       if (/already exists/i.test(raw) || /уже существует/i.test(raw)) return "Аккаунт с таким email уже существует.";
       if (/пароли не совпадают/i.test(raw) || /passwords do not match/i.test(raw)) return "Пароли не совпадают.";
+      if (/только английские буквы/i.test(raw) || /only english letters/i.test(raw))
+        return "В пароле разрешены только латинские буквы.";
       return raw;
     }
   } catch {

@@ -23,11 +23,13 @@ const LOGIN_PLACEHOLDER = {
 
 function passwordChecks(password) {
   const value = String(password ?? "");
+  const hasNonLatinLetter = /[^\x00-\x7F]/.test(value) && /[\p{L}]/u.test(value);
   return {
     minLength: value.length >= 8,
-    lower: /[a-zа-яё]/.test(value),
-    upper: /[A-ZА-ЯЁ]/.test(value),
-    special: /[^A-Za-zА-Яа-яЁё0-9]/.test(value),
+    lower: /[a-z]/.test(value),
+    upper: /[A-Z]/.test(value),
+    special: /[^A-Za-z0-9]/.test(value),
+    latinLettersOnly: !hasNonLatinLetter,
   };
 }
 
@@ -45,7 +47,7 @@ export default function RegisterByRolePage({ role }) {
   }, [user, navigate]);
 
   const checks = useMemo(() => passwordChecks(passwordValue), [passwordValue]);
-  const isPasswordStrong = checks.minLength && checks.lower && checks.upper && checks.special;
+  const isPasswordStrong = checks.minLength && checks.lower && checks.upper && checks.special && checks.latinLettersOnly;
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -76,7 +78,11 @@ export default function RegisterByRolePage({ role }) {
       return;
     }
     if (!isPasswordStrong) {
-      setAuthError("Пароль не соответствует требованиям.");
+      if (!checks.latinLettersOnly) {
+        setAuthError("В пароле разрешены только латинские буквы.");
+      } else {
+        setAuthError("Пароль не соответствует требованиям.");
+      }
       return;
     }
     if (password !== passwordConfirm) {
@@ -162,6 +168,9 @@ export default function RegisterByRolePage({ role }) {
             <li className={`password-rules__item${checks.lower ? " is-met" : ""}`}>Есть строчная буква</li>
             <li className={`password-rules__item${checks.upper ? " is-met" : ""}`}>Есть прописная буква</li>
             <li className={`password-rules__item${checks.special ? " is-met" : ""}`}>Есть спецсимвол</li>
+            <li className={`password-rules__item${checks.latinLettersOnly ? " is-met" : ""}`}>
+              Только латинские буквы
+            </li>
           </ul>
           <PasswordField
             label="Повторите пароль"
