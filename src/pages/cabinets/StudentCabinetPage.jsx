@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import QRCode from "qrcode";
 import * as studentDiplomaApi from "../../api/studentDiplomaApi.js";
-import { useAuth } from "../../auth/AuthContext.jsx";
 import CabinetShell from "../../components/CabinetShell.jsx";
 import "./cabinet.css";
 
@@ -16,9 +15,6 @@ function formatDate(value) {
 }
 
 export default function StudentCabinetPage() {
-  const { user } = useAuth();
-  const fullName = useMemo(() => [user?.lastName, user?.firstName].filter(Boolean).join(" ").trim(), [user?.firstName, user?.lastName]);
-
   const [form, setForm] = useState({
     universityCode: "",
     diplomaNumber: "",
@@ -28,10 +24,12 @@ export default function StudentCabinetPage() {
   const [checkBusy, setCheckBusy] = useState(false);
   const [checkResult, setCheckResult] = useState(null);
   const [checkError, setCheckError] = useState("");
+  const [currentStep, setCurrentStep] = useState(1);
 
   const [ttlHours, setTtlHours] = useState(72);
   const [issueBusy, setIssueBusy] = useState(false);
   const [issueError, setIssueError] = useState("");
+  const [issueSuccess, setIssueSuccess] = useState("");
   const [linksBusy, setLinksBusy] = useState(false);
   const [links, setLinks] = useState([]);
   const [selectedToken, setSelectedToken] = useState("");
@@ -87,6 +85,8 @@ export default function StudentCabinetPage() {
     setCheckError("");
     setCheckResult(null);
     setIssueError("");
+    setIssueSuccess("");
+    setCurrentStep(1);
     if (!form.universityCode.trim() || !form.diplomaNumber.trim() || !form.graduationYear.trim() || !form.specialty.trim()) {
       setCheckError("Заполните все поля диплома.");
       return;
@@ -100,11 +100,13 @@ export default function StudentCabinetPage() {
         specialty: form.specialty,
       });
       setCheckResult(result);
+      setCurrentStep(2);
       if (!result.found) {
         setCheckError("Диплом не найден в реестре. Проверьте данные.");
       }
     } catch (error) {
       setCheckError(error instanceof Error ? error.message : "Ошибка проверки диплома.");
+      setCurrentStep(2);
     } finally {
       setCheckBusy(false);
     }
@@ -116,6 +118,7 @@ export default function StudentCabinetPage() {
       return;
     }
     setIssueError("");
+    setIssueSuccess("");
     setIssueBusy(true);
     try {
       const created = await studentDiplomaApi.createStudentVerificationLink({
@@ -125,6 +128,8 @@ export default function StudentCabinetPage() {
       });
       await loadLinks();
       setSelectedToken(created.token);
+      setIssueSuccess("QR успешно создан");
+      setCurrentStep(3);
     } catch (error) {
       setIssueError(error instanceof Error ? error.message : "Не удалось создать QR.");
     } finally {
@@ -152,23 +157,34 @@ export default function StudentCabinetPage() {
     }
   };
 
+  const onResetFlow = () => {
+    setForm({
+      universityCode: "",
+      diplomaNumber: "",
+      graduationYear: "",
+      specialty: "",
+    });
+    setCheckResult(null);
+    setCheckError("");
+    setIssueError("");
+    setIssueSuccess("");
+    setCurrentStep(1);
+  };
+
   return (
     <CabinetShell
       badge="Личный кабинет студента"
       title="QR для проверки диплома"
       subtitle="Проверьте диплом в реестре, выпустите QR-ссылку с TTL и деактивируйте её в любой момент."
     >
-      <div className="cabinet-card" style={{ marginTop: "0.6rem" }}>
+      {currentStep === 1 ? (
+      <div className="cabinet-card student-step-panel is-visible" style={{ marginTop: "0.6rem" }}>
         <h2 className="cabinet-card__title">Шаг 1. Данные диплома</h2>
-        <p className="cabinet-card__hint">ФИО берётся из аккаунта, остальные поля вводятся вручную.</p>
+        <p className="cabinet-card__hint">После проверки будут автоматически открыты следующие шаги.</p>
         <form className="admin-user-form" onSubmit={onCheckDiploma}>
           <div className="admin-user-form__grid" style={{ marginTop: "0.8rem" }}>
             <label className="cabinet-field">
-              <span className="cabinet-field__label">ФИО (из аккаунта)</span>
-              <input className="cabinet-field__input" value={fullName || "—"} disabled />
-            </label>
-            <label className="cabinet-field">
-              <span className="cabinet-field__label">Код ВУЗа</span>
+              <span className="cabinet-field__label">Название ВУЗа</span>
               <input
                 className="cabinet-field__input"
                 value={form.universityCode}
@@ -215,65 +231,89 @@ export default function StudentCabinetPage() {
           <div className="cabinet-actions" style={{ marginTop: "0.9rem" }}>
             <button type="submit" className="btn btn--primary" disabled={checkBusy}>
               <span className="btn__shine" aria-hidden="true" />
-              <span className="btn__label">{checkBusy ? "Проверка…" : "Проверить хэш в реестре"}</span>
+              <span className="btn__label">{checkBusy ? "Проверка…" : "Проверить диплом"}</span>
             </button>
           </div>
         </form>
       </div>
+      ) : null}
 
-      <div className="cabinet-card" style={{ marginTop: "1rem" }}>
-        <h2 className="cabinet-card__title">Шаг 2. Результат проверки</h2>
-        {checkResult?.found ? (
-          <div className="student-step-result student-step-result--ok" role="status">
-            <span className="student-step-result__icon" aria-hidden="true">
-              ✓
-            </span>
-            <div>
-              <p className="student-step-result__title">Диплом найден в реестре</p>
-              <p className="cabinet-card__hint">Хэш совпал с базой дипломов. Можно выпускать QR.</p>
+      {currentStep === 2 ? (
+        <div className="cabinet-card student-step-panel is-visible" style={{ marginTop: "1rem" }}>
+          <h2 className="cabinet-card__title">Шаг 2. Результат проверки</h2>
+          {checkResult?.found ? (
+            <div className="student-step-result student-step-result--ok" role="status">
+              <span className="student-step-result__icon student-step-result__icon--ok" aria-hidden="true">
+                ✓
+              </span>
+              <div>
+                <p className="student-step-result__title">Диплом найден в реестре</p>
+                <p className="cabinet-card__hint">Хэш совпал с базой дипломов. Можно переходить к QR.</p>
+                <div className="cabinet-actions" style={{ marginTop: "0.75rem" }}>
+                  <button type="button" className="btn btn--primary" onClick={() => setCurrentStep(3)}>
+                    <span className="btn__shine" aria-hidden="true" />
+                    <span className="btn__label">Далее</span>
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
-        ) : (
-          <div className="student-step-result student-step-result--wait">
-            <span className="student-step-result__icon" aria-hidden="true">
-              !
-            </span>
-            <div>
-              <p className="student-step-result__title">Ожидается проверка</p>
-              <p className="cabinet-card__hint">Введите данные и выполните проверку в шаге 1.</p>
+          ) : (
+            <div className="student-step-result student-step-result--fail">
+              <span className="student-step-result__icon student-step-result__icon--fail" aria-hidden="true">
+                ✕
+              </span>
+              <div>
+                <p className="student-step-result__title">Диплом не подтверждён</p>
+                <p className="cabinet-card__hint">Проверьте данные в шаге 1 и запустите проверку снова.</p>
+                <div className="cabinet-actions" style={{ marginTop: "0.75rem" }}>
+                  <button type="button" className="btn btn--secondary" onClick={onResetFlow}>
+                    <span className="btn__label">Заполнить заново</span>
+                  </button>
+                </div>
+              </div>
             </div>
+          )}
+        </div>
+      ) : null}
+
+      {currentStep === 3 ? (
+        <div className="cabinet-card student-step-panel is-visible" style={{ marginTop: "1rem" }}>
+          <h2 className="cabinet-card__title">Шаг 3. Создание QR</h2>
+          <div className="cabinet-field" style={{ maxWidth: "280px", marginTop: "0.75rem" }}>
+            <span className="cabinet-field__label">Срок действия</span>
+            <select className="cabinet-field__input" value={ttlHours} onChange={(e) => setTtlHours(Number(e.target.value))}>
+              {TTL_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
           </div>
-        )}
-      </div>
-
-      <div className="cabinet-card" style={{ marginTop: "1rem" }}>
-        <h2 className="cabinet-card__title">Шаг 3. Создание QR</h2>
-        <div className="cabinet-field" style={{ maxWidth: "280px", marginTop: "0.75rem" }}>
-          <span className="cabinet-field__label">Срок действия</span>
-          <select className="cabinet-field__input" value={ttlHours} onChange={(e) => setTtlHours(Number(e.target.value))}>
-            {TTL_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
+          {issueError ? (
+            <p className="auth-error is-visible" role="alert" style={{ marginTop: "0.75rem" }}>
+              {issueError}
+            </p>
+          ) : null}
+          {issueSuccess ? (
+            <p className="cabinet-cap-flash" role="status" style={{ marginTop: "0.75rem", marginBottom: 0 }}>
+              {issueSuccess}
+            </p>
+          ) : null}
+          <div className="cabinet-actions" style={{ marginTop: "0.9rem" }}>
+            <button type="button" className="btn btn--primary" disabled={!checkResult?.found || issueBusy} onClick={onIssueQr}>
+              <span className="btn__shine" aria-hidden="true" />
+              <span className="btn__label">{issueBusy ? "Создание…" : "Создать QR-ссылку"}</span>
+            </button>
+            <button type="button" className="btn btn--secondary" disabled={issueBusy} onClick={onResetFlow}>
+              <span className="btn__label">Заполнить заново</span>
+            </button>
+          </div>
         </div>
-        {issueError ? (
-          <p className="auth-error is-visible" role="alert" style={{ marginTop: "0.75rem" }}>
-            {issueError}
-          </p>
-        ) : null}
-        <div className="cabinet-actions" style={{ marginTop: "0.9rem" }}>
-          <button type="button" className="btn btn--primary" disabled={!checkResult?.found || issueBusy} onClick={onIssueQr}>
-            <span className="btn__shine" aria-hidden="true" />
-            <span className="btn__label">{issueBusy ? "Создание…" : "Создать QR-ссылку"}</span>
-          </button>
-        </div>
-      </div>
+      ) : null}
 
-      <div className="cabinet-grid cabinet-grid--2" style={{ marginTop: "1rem" }}>
+      <div className="cabinet-grid cabinet-grid--2 student-step-panel is-visible" style={{ marginTop: "1rem" }}>
         <div className="cabinet-card">
-          <h2 className="cabinet-card__title">Мои QR-ссылки</h2>
+          <h2 className="cabinet-card__title">Созданные QR-ссылки</h2>
           {linksBusy ? <p className="cabinet-card__hint">Загрузка…</p> : null}
           {!linksBusy && links.length === 0 ? <p className="cabinet-card__hint">Ссылок пока нет.</p> : null}
           <div className="student-links-list">

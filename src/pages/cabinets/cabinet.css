@@ -755,6 +755,11 @@ select.cabinet-field__input {
   background: rgba(255, 255, 255, 0.03);
 }
 
+.student-step-result--fail {
+  background: rgba(255, 84, 99, 0.08);
+  border-color: rgba(255, 84, 99, 0.3);
+}
+
 .student-step-result__icon {
   width: 1.5rem;
   height: 1.5rem;
@@ -767,6 +772,38 @@ select.cabinet-field__input {
   color: rgba(255, 255, 255, 0.96);
   background: linear-gradient(135deg, rgba(0, 242, 255, 0.75), rgba(123, 44, 191, 0.8));
   flex: 0 0 auto;
+}
+
+.student-step-result__icon--ok {
+  position: relative;
+  background: radial-gradient(circle at 35% 35%, #5cffbf 0%, #2edb91 55%, #19b875 100%);
+  color: #072218;
+  box-shadow: 0 0 16px rgba(62, 235, 160, 0.55);
+}
+
+.student-step-result__icon--ok::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 999px;
+  border: 1px solid rgba(92, 255, 191, 0.45);
+  box-shadow: 0 0 14px rgba(92, 255, 191, 0.28);
+}
+
+.student-step-result__icon--fail {
+  position: relative;
+  background: radial-gradient(circle at 35% 35%, #ff8b98 0%, #ff5463 52%, #d63147 100%);
+  color: #2a050a;
+  box-shadow: 0 0 16px rgba(255, 84, 99, 0.5);
+}
+
+.student-step-result__icon--fail::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 123, 137, 0.48);
+  box-shadow: 0 0 14px rgba(255, 84, 99, 0.25);
 }
 
 .student-step-result__title {
@@ -818,4 +855,21 @@ select.cabinet-field__input {
 
 .student-cabinet-qr__styled {
   margin-top: 0.85rem;
+}
+
+.student-step-panel.is-visible {
+  animation: studentStepReveal 0.38s ease both;
+}
+
+@keyframes studentStepReveal {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+    filter: blur(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
 }
