@@ -93,16 +93,32 @@ const AUDIENCE = [
 export default function HomePage() {
   const { user } = useAuth();
   const cabinetPath = user ? cabinetPathForRole(user.role) : "/login";
+  const smoothScrollTo = (event) => {
+    const href = event.currentTarget.getAttribute("href");
+    if (!href || !href.startsWith("#")) {
+      return;
+    }
+
+    const target = document.querySelector(href);
+    if (!target) {
+      return;
+    }
+
+    event.preventDefault();
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    target.scrollIntoView({ behavior: prefersReducedMotion ? "auto" : "smooth", block: "start" });
+    window.history.replaceState(null, "", href);
+  };
 
   const nav = (
     <nav className="top-bar__nav" aria-label="Основная навигация">
-      <a href="#benefits" className="top-bar__nav-link">
+      <a href="#benefits" className="top-bar__nav-link" onClick={smoothScrollTo}>
         Преимущества
       </a>
-      <a href="#how" className="top-bar__nav-link">
+      <a href="#how" className="top-bar__nav-link" onClick={smoothScrollTo}>
         Как работает
       </a>
-      <a href="#audience" className="top-bar__nav-link">
+      <a href="#audience" className="top-bar__nav-link" onClick={smoothScrollTo}>
         Для кого
       </a>
       <Link to="/login/vuz" className="top-bar__nav-link top-bar__nav-link--muted">
