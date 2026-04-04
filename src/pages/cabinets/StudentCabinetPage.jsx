@@ -6,15 +6,17 @@ import CabinetShell from "../../components/CabinetShell.jsx";
 import { DGTU_SFU_BRANCH_NAMES } from "../../data/dgtuSfuBranches.js";
 import { ISLOD_VPO_UNIVERSITY_NAMES } from "../../data/islodVpoUniversities.js";
 import { MGU_BRANCH_NAMES } from "../../data/mguBranches.js";
+import { ROSTGMU_NAMES } from "../../data/rostgmuBranches.js";
 import "./cabinet.css";
 
-/** Демо-реестр + ВПО (ISLOD) + филиалы ДГТУ/ЮФУ + МГУ; пересборка ISLOD: node scripts/fetch_islod_vpo_universities.mjs */
+/** Демо-реестр + ВПО (ISLOD) + филиалы ДГТУ/ЮФУ + МГУ + РостГМУ; пересборка ISLOD: node scripts/fetch_islod_vpo_universities.mjs */
 const DIPLOMA_SEARCH_VUZ_OPTIONS = [
   ...new Set([
     "Демо-университет",
     ...ISLOD_VPO_UNIVERSITY_NAMES,
     ...DGTU_SFU_BRANCH_NAMES,
     ...MGU_BRANCH_NAMES,
+    ...ROSTGMU_NAMES,
   ]),
 ].sort((a, b) => a.localeCompare(b, "ru"));
 
@@ -341,16 +343,6 @@ export default function StudentCabinetPage() {
         style={{ marginTop: "1rem" }}
       >
         <h2 className="cabinet-card__title">Поиск диплома</h2>
-        <p className="cabinet-card__hint" style={{ marginBottom: "0.85rem" }}>
-          Номер диплома — из подсказок реестра или вручную. Название вуза — введите текст или листайте подсказки стрелками{" "}
-          <kbd className="student-vuz-kbd">↑</kbd> <kbd className="student-vuz-kbd">↓</kbd> (по кругу),{" "}
-          <kbd className="student-vuz-kbd">Enter</kbd> — выбрать, <kbd className="student-vuz-kbd">Esc</kbd> — закрыть
-          список; <kbd className="student-vuz-kbd">PgUp</kbd>/<kbd className="student-vuz-kbd">PgDn</kbd>,{" "}
-          <kbd className="student-vuz-kbd">Home</kbd>/<kbd className="student-vuz-kbd">End</kbd> — быстрый переход по
-          длинному списку; колесо мыши над списком прокручивает строки (полоса справа). Перечень ВПО: ISLOD (см. scripts/fetch_islod_vpo_universities.mjs). Дата
-          окончания — год ({GRADUATION_SEARCH_YEAR_MIN}–{GRADUATION_SEARCH_YEAR_MAX}): до четырёх цифр или стрелки справа.
-          Демо: фильтрация по локальному реестру. Kotlin: GET /api/v1/university/diplomas/search.
-        </p>
         {diplomaSearchError ? (
           <p className="auth-error" role="alert">
             {diplomaSearchError}
