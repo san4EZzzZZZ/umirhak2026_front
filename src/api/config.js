@@ -12,6 +12,17 @@ const fallbackBaseUrl =
 export const API_BASE_URL =
   typeof envBaseUrl === "string" && envBaseUrl.trim() ? envBaseUrl.trim() : fallbackBaseUrl;
 
+function buildApiUrl(baseUrl, path) {
+  const normalizedBase = String(baseUrl || "").trim().replace(/\/+$/, "");
+  const normalizedPath = `/${String(path || "").replace(/^\/+/, "")}`;
+
+  // Protect against misconfigured base like https://site.tld/api + path /api/v1/...
+  if (normalizedBase.endsWith("/api") && normalizedPath.startsWith("/api/")) {
+    return `${normalizedBase}${normalizedPath.slice(4)}`;
+  }
+  return `${normalizedBase}${normalizedPath}`;
+}
+
 /**
  * Заголовки для вызовов Kotlin-бэкенда. После внедрения JWT подставьте токен из хранилища сессии.
  */
@@ -27,6 +38,6 @@ export function kotlinApiHeaders() {
 
 /** Обёртка под fetch с единой точкой для логирования и замены на ktor-client / Retrofit */
 export async function kotlinFetch(path, options = {}) {
-  const url = `${API_BASE_URL.replace(/\/$/, "")}${path.startsWith("/") ? path : `/${path}`}`;
+  const url = buildApiUrl(API_BASE_URL, path);
   return fetch(url, { ...options, headers: { ...kotlinApiHeaders(), ...options.headers } });
 }
