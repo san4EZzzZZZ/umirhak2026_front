@@ -6,7 +6,8 @@ import "./cabinet.css";
 /** Kotlin: employerRegistryApi.js */
 
 export default function EmployerCabinetPage() {
-  const [query, setQuery] = useState("");
+  const [university, setUniversity] = useState("");
+  const [diplomaNumber, setDiplomaNumber] = useState("");
   const [rows, setRows] = useState([]);
   const [searched, setSearched] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -16,7 +17,10 @@ export default function EmployerCabinetPage() {
     setLoading(true);
     setSearched(true);
     try {
-      const data = await employerRegistryApi.searchRegistry(query);
+      const data = await employerRegistryApi.searchRegistry({
+        university,
+        diplomaNumber,
+      });
       setRows(data);
     } finally {
       setLoading(false);
@@ -32,22 +36,35 @@ export default function EmployerCabinetPage() {
     <CabinetShell
       badge="HR / работодатель"
       title="Проверка дипломов"
-      subtitle="Поиск по реестру по ФИО и вузу, ручной ввод данных для сверки и сканирование QR-кода выпускника (в продакшене — отдельный поток с камерой)."
+      subtitle="Поиск по названию ВУЗа (или коду) и по номеру диплома, а также проверка через QR-код выпускника."
     >
       <div className="cabinet-grid cabinet-grid--2">
         <div className="cabinet-card">
           <h2 className="cabinet-card__title">Поиск в реестре</h2>
           <form onSubmit={onSearch}>
             <div className="cabinet-field">
-              <label className="cabinet-field__label" htmlFor="hr-q">
-                ФИО или фрагмент
+              <label className="cabinet-field__label" htmlFor="hr-university">
+                Название ВУЗа или код
               </label>
               <input
-                id="hr-q"
+                id="hr-university"
                 className="cabinet-field__input"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Например: Иванов"
+                value={university}
+                onChange={(e) => setUniversity(e.target.value)}
+                placeholder="Например: DEMO или Демо-университет"
+                autoComplete="off"
+              />
+            </div>
+            <div className="cabinet-field">
+              <label className="cabinet-field__label" htmlFor="hr-diploma-number">
+                Номер диплома
+              </label>
+              <input
+                id="hr-diploma-number"
+                className="cabinet-field__input"
+                value={diplomaNumber}
+                onChange={(e) => setDiplomaNumber(e.target.value)}
+                placeholder="Например: ВСГ 1234567"
                 autoComplete="off"
               />
             </div>
@@ -60,7 +77,7 @@ export default function EmployerCabinetPage() {
         <div className="cabinet-card">
           <h2 className="cabinet-card__title">Сканирование QR</h2>
           <p className="cabinet-card__hint" style={{ margin: 0 }}>
-            Kotlin: POST /api/v1/employer/verify/qr — передайте сырое содержимое QR. В демо кнопка вызывает только заглушку.
+            Kotlin: POST /api/v1/employer/verify/qr — передайте сырое содержимое QR после сканирования камерой. В демо кнопка вызывает заглушку.
           </p>
           <div className="cabinet-actions" style={{ marginTop: "1rem" }}>
             <button type="button" className="btn btn--secondary" onClick={onScanStub}>
@@ -77,6 +94,7 @@ export default function EmployerCabinetPage() {
               <tr>
                 <th scope="col">ФИО</th>
                 <th scope="col">ВУЗ</th>
+                <th scope="col">Номер диплома</th>
                 <th scope="col">Год</th>
                 <th scope="col">Результат</th>
               </tr>
@@ -84,7 +102,7 @@ export default function EmployerCabinetPage() {
             <tbody>
               {rows.length === 0 ? (
                 <tr>
-                  <td colSpan={4} style={{ color: "var(--text-muted)" }}>
+                  <td colSpan={5} style={{ color: "var(--text-muted)" }}>
                     Ничего не найдено — уточните запрос или проверьте написание.
                   </td>
                 </tr>
@@ -93,6 +111,7 @@ export default function EmployerCabinetPage() {
                   <tr key={r.id}>
                     <td>{r.fio}</td>
                     <td>{r.vuz}</td>
+                    <td>{r.diplomaNumber}</td>
                     <td>{r.year}</td>
                     <td>
                       <span className="cabinet-pill cabinet-pill--ok">{r.status}</span>

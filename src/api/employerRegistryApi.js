@@ -2,28 +2,51 @@
  * Кабинет HR: поиск в реестре, проверка по QR.
  *
  * Kotlin:
- * - GET  /api/v1/employer/registry/search?q=
+ * - GET  /api/v1/employer/registry/search?university=&diplomaNumber=
  * - POST /api/v1/employer/verify/qr  — { payload: string }
  */
 
 import { API_BASE_URL, kotlinApiHeaders } from "./config.js";
 
 /**
- * @param {string} query
- * @returns {Promise<{ id: string, fio: string, vuz: string, year: string, status: string }[]>}
+ * @param {{ university: string, diplomaNumber: string }} params
+ * @returns {Promise<{ id: string, fio: string, vuz: string, diplomaNumber: string, year: string, status: string }[]>}
  */
-export async function searchRegistry(query) {
-  // Kotlin: GET /api/v1/employer/registry/search?q=...
+export async function searchRegistry(params) {
+  // Kotlin: GET /api/v1/employer/registry/search?university=...&diplomaNumber=...
   void API_BASE_URL;
   void kotlinApiHeaders;
   const all = [
-    { id: "1", fio: "Иванов И. И.", vuz: "Демо-университет", year: "2025", status: "Совпадение в реестре" },
-    { id: "2", fio: "Петрова А. С.", vuz: "Демо-университет", year: "2024", status: "Совпадение в реестре" },
+    {
+      id: "1",
+      fio: "Иванов И. И.",
+      vuz: "DEMO / Демо-университет",
+      diplomaNumber: "ВСГ 1234567",
+      year: "2025",
+      status: "Совпадение в реестре",
+    },
+    {
+      id: "2",
+      fio: "Петрова А. С.",
+      vuz: "DEMO / Демо-университет",
+      diplomaNumber: "МСК 7654321",
+      year: "2024",
+      status: "Совпадение в реестре",
+    },
   ];
-  const q = query.trim().toLowerCase();
-  if (!q) return Promise.resolve(all);
+  const university = String(params?.university ?? "")
+    .trim()
+    .toLowerCase();
+  const diplomaNumber = String(params?.diplomaNumber ?? "")
+    .trim()
+    .toLowerCase();
+  if (!university && !diplomaNumber) return Promise.resolve(all);
   return Promise.resolve(
-    all.filter((r) => r.fio.toLowerCase().includes(q) || r.vuz.toLowerCase().includes(q))
+    all.filter((r) => {
+      const byUniversity = !university || r.vuz.toLowerCase().includes(university);
+      const byDiplomaNumber = !diplomaNumber || r.diplomaNumber.toLowerCase().includes(diplomaNumber);
+      return byUniversity && byDiplomaNumber;
+    })
   );
 }
 
