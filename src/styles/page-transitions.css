@@ -20,8 +20,8 @@
     var(--magenta-soft) 100%
   );
   box-shadow:
-    0 0 14px 1px rgba(0, 242, 255, 0.45),
-    0 6px 28px rgba(157, 78, 221, 0.22);
+    0 0 14px 1px rgba(30, 88, 134, 0.45),
+    0 6px 28px rgba(45, 110, 164, 0.22);
   animation: navRouteAccentDraw 0.52s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
@@ -44,7 +44,7 @@
   .nav-route-accent {
     transform: none;
     animation: navRouteAccentReduced 0.22s ease-out forwards;
-    box-shadow: 0 0 10px rgba(0, 242, 255, 0.35);
+    box-shadow: 0 0 10px rgba(30, 88, 134, 0.35);
   }
 
   @keyframes navRouteAccentReduced {
@@ -59,3 +59,5 @@
     }
   }
 }
+
+

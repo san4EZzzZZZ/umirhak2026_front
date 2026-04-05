@@ -2,7 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import * as authApi from "../api/authApi.js";
 import { ROLE_LABELS } from "../auth/authPaths.js";
 import { useAuth } from "../auth/AuthContext.jsx";
-import logoSvg from "../assets/logo.svg";
+import logoPng from "../assets/logo.png";
 
 export default function CabinetShell({ badge, title, subtitle, children }) {
   const { user, signOut } = useAuth();
@@ -29,7 +29,7 @@ export default function CabinetShell({ badge, title, subtitle, children }) {
       <header className="top-bar top-bar--cabinet">
         <Link className="brand" to="/" aria-label="На главную">
           <span className="brand__mark">
-            <img src={logoSvg} alt="" className="brand__logo" width="203" height="48" />
+            <img src={logoPng} alt="" className="brand__logo" width="203" height="48" />
           </span>
         </Link>
 

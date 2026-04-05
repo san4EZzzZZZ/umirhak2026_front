@@ -4,15 +4,15 @@
   --bg-2: #0d1127;
   --text: #f4f6fb;
   --text-muted: rgba(244, 246, 251, 0.62);
-  --purple: #7b2cbf;
-  --purple-bright: #9d4edd;
-  --magenta: #e0115f;
-  --magenta-soft: #ff3d8a;
-  --cyan: #00f2ff;
+  --purple: #1e5886;
+  --purple-bright: #2d6ea4;
+  --magenta: #bb2222;
+  --magenta-soft: #d73b3b;
+  --cyan: #1e5886;
   --card: rgba(12, 14, 35, 0.72);
   --card-border: rgba(255, 255, 255, 0.1);
   --input-bg: rgba(5, 8, 22, 0.65);
-  --focus-ring: rgba(0, 242, 255, 0.35);
+  --focus-ring: rgba(30, 88, 134, 0.35);
   --radius-lg: 18px;
   --radius-md: 12px;
   --font: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -85,7 +85,7 @@ body {
 .blob--3 {
   width: min(300px, 50vw);
   height: min(300px, 50vw);
-  background: radial-gradient(circle at 50% 50%, rgba(0, 242, 255, 0.35), transparent 65%);
+  background: radial-gradient(circle at 50% 50%, rgba(30, 88, 134, 0.35), transparent 65%);
   top: 42%;
   left: 35%;
   opacity: 0.35;
@@ -137,7 +137,7 @@ body {
 
 .brand__mark {
   display: flex;
-  filter: drop-shadow(0 0 18px rgba(0, 242, 255, 0.15));
+  filter: drop-shadow(0 0 18px rgba(30, 88, 134, 0.15));
 }
 
 .brand__mark .brand__logo {
@@ -156,6 +156,18 @@ body {
   font-weight: 700;
   font-size: 1.15rem;
   letter-spacing: 0.12em;
+}
+
+.brand__name-word {
+  white-space: nowrap;
+}
+
+.brand__name-word--honest {
+  color: #1e5886;
+}
+
+.brand__name-word--diploma {
+  color: #bb2222;
 }
 
 .brand__tag {
@@ -196,7 +208,7 @@ body {
   position: absolute;
   inset: -1px;
   border-radius: inherit;
-  background: linear-gradient(135deg, rgba(123, 44, 191, 0.35), rgba(224, 17, 95, 0.2), rgba(0, 242, 255, 0.12));
+  background: linear-gradient(135deg, rgba(30, 88, 134, 0.35), rgba(187, 34, 34, 0.2), rgba(30, 88, 134, 0.12));
   opacity: 0.45;
   z-index: -1;
   filter: blur(20px);
@@ -225,17 +237,17 @@ body {
 }
 
 .auth-subtitle__link {
-  color: rgba(0, 242, 255, 0.85);
+  color: rgba(30, 88, 134, 0.85);
   text-decoration: none;
   font-weight: 500;
-  border-bottom: 1px solid rgba(0, 242, 255, 0.35);
+  border-bottom: 1px solid rgba(30, 88, 134, 0.35);
   transition: color 0.2s ease, border-color 0.2s ease, text-shadow 0.2s ease;
 }
 
 .auth-subtitle__link:hover {
   color: var(--cyan);
-  border-bottom-color: rgba(0, 242, 255, 0.65);
-  text-shadow: 0 0 12px rgba(0, 242, 255, 0.25);
+  border-bottom-color: rgba(30, 88, 134, 0.65);
+  text-shadow: 0 0 12px rgba(30, 88, 134, 0.25);
 }
 
 .auth-badge {
@@ -247,10 +259,10 @@ body {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: rgba(244, 246, 251, 0.92);
-  background: linear-gradient(135deg, rgba(123, 44, 191, 0.45), rgba(224, 17, 95, 0.3));
+  background: linear-gradient(135deg, rgba(30, 88, 134, 0.45), rgba(187, 34, 34, 0.3));
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 999px;
-  box-shadow: 0 4px 20px rgba(123, 44, 191, 0.2);
+  box-shadow: 0 4px 20px rgba(30, 88, 134, 0.2);
 }
 
 .auth-crosslink {
@@ -319,8 +331,8 @@ body {
 
 .role-tab.is-active {
   color: var(--text);
-  background: linear-gradient(145deg, rgba(123, 44, 191, 0.55), rgba(224, 17, 95, 0.4));
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12), 0 8px 24px rgba(123, 44, 191, 0.25);
+  background: linear-gradient(145deg, rgba(30, 88, 134, 0.55), rgba(187, 34, 34, 0.4));
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12), 0 8px 24px rgba(30, 88, 134, 0.25);
 }
 
 .role-hint {
@@ -370,12 +382,12 @@ body {
 }
 
 .field__input:hover {
-  border-color: rgba(157, 78, 221, 0.45);
+  border-color: rgba(45, 110, 164, 0.45);
 }
 
 .field__input:focus {
   outline: none;
-  border-color: rgba(0, 242, 255, 0.45);
+  border-color: rgba(30, 88, 134, 0.45);
   box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
@@ -414,8 +426,8 @@ body {
 }
 
 .field__password-toggle:hover {
-  color: rgba(0, 242, 255, 0.9);
-  background: rgba(0, 242, 255, 0.1);
+  color: rgba(30, 88, 134, 0.9);
+  background: rgba(30, 88, 134, 0.1);
 }
 
 .field__password-toggle:focus-visible {
@@ -466,19 +478,19 @@ body {
 .checkbox input:checked + .checkbox__box {
   background: linear-gradient(145deg, var(--purple), var(--magenta));
   border-color: transparent;
-  box-shadow: 0 0 12px rgba(224, 17, 95, 0.35);
+  box-shadow: 0 0 12px rgba(187, 34, 34, 0.35);
 }
 
 .link-muted {
   font-size: 0.8rem;
-  color: rgba(0, 242, 255, 0.75);
+  color: rgba(30, 88, 134, 0.75);
   text-decoration: none;
   transition: color 0.2s ease, text-shadow 0.2s ease;
 }
 
 .link-muted:hover {
   color: var(--cyan);
-  text-shadow: 0 0 12px rgba(0, 242, 255, 0.35);
+  text-shadow: 0 0 12px rgba(30, 88, 134, 0.35);
 }
 
 .btn {
@@ -502,16 +514,16 @@ body {
 
 .btn--primary {
   color: #fff;
-  background: linear-gradient(120deg, var(--purple) 0%, #a855c4 45%, var(--magenta) 100%);
+  background: linear-gradient(120deg, var(--purple) 0%, #6c3f58 45%, var(--magenta) 100%);
   background-size: 200% 100%;
   background-position: 0% 50%;
-  box-shadow: 0 4px 24px rgba(123, 44, 191, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.12) inset;
+  box-shadow: 0 4px 24px rgba(30, 88, 134, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.12) inset;
   transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, background-position 0.45s ease, filter 0.2s ease;
 }
 
 .btn--primary:hover {
   transform: scale(1.03) translateY(-1px);
-  box-shadow: 0 8px 36px rgba(224, 17, 95, 0.45), 0 0 40px rgba(123, 44, 191, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.15) inset;
+  box-shadow: 0 8px 36px rgba(187, 34, 34, 0.45), 0 0 40px rgba(30, 88, 134, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.15) inset;
   background-position: 100% 50%;
 }
 
@@ -530,15 +542,15 @@ body {
   color: var(--text);
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.14);
-  box-shadow: 0 0 0 1px rgba(0, 242, 255, 0.08) inset;
+  box-shadow: 0 0 0 1px rgba(30, 88, 134, 0.08) inset;
   transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease, box-shadow 0.25s ease;
 }
 
 .btn--secondary:hover:not(:disabled) {
   transform: scale(1.03) translateY(-1px);
-  background: rgba(123, 44, 191, 0.2);
-  border-color: rgba(157, 78, 221, 0.45);
-  box-shadow: 0 0 24px rgba(0, 242, 255, 0.12);
+  background: rgba(30, 88, 134, 0.2);
+  border-color: rgba(45, 110, 164, 0.45);
+  box-shadow: 0 0 24px rgba(30, 88, 134, 0.12);
 }
 
 .btn--secondary:active:not(:disabled) {
@@ -610,8 +622,8 @@ body {
   font-size: 0.82rem;
   line-height: 1.4;
   color: #ffc9d4;
-  background: rgba(224, 17, 95, 0);
-  border: 1px solid rgba(224, 17, 95, 0);
+  background: rgba(187, 34, 34, 0);
+  border: 1px solid rgba(187, 34, 34, 0);
   transition: max-height 0.28s ease, opacity 0.24s ease, transform 0.24s ease, margin 0.28s ease, padding 0.28s ease,
     background-color 0.2s ease, border-color 0.2s ease;
 }
@@ -622,8 +634,8 @@ body {
   max-height: 120px;
   opacity: 1;
   transform: translateY(0);
-  background: rgba(224, 17, 95, 0.14);
-  border: 1px solid rgba(224, 17, 95, 0.35);
+  background: rgba(187, 34, 34, 0.14);
+  border: 1px solid rgba(187, 34, 34, 0.35);
 }
 
 .auth-error--vuz.is-visible {
@@ -637,8 +649,8 @@ body {
   font-size: 0.82rem;
   line-height: 1.4;
   color: #b8f5e8;
-  background: rgba(0, 242, 255, 0.08);
-  border: 1px solid rgba(0, 242, 255, 0.28);
+  background: rgba(30, 88, 134, 0.08);
+  border: 1px solid rgba(30, 88, 134, 0.28);
 }
 
 .auth-success.auth-success--application {
@@ -683,7 +695,7 @@ body {
   padding: 0.9rem 1rem;
   border-radius: var(--radius-md);
   background: rgba(0, 0, 0, 0.32);
-  border: 1px solid rgba(0, 242, 255, 0.12);
+  border: 1px solid rgba(30, 88, 134, 0.12);
 }
 
 .auth-demo__title {
@@ -692,7 +704,7 @@ body {
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: rgba(0, 242, 255, 0.75);
+  color: rgba(30, 88, 134, 0.75);
 }
 
 .auth-demo__table {
@@ -831,3 +843,6 @@ body {
     transform: none;
   }
 }
+
+
+
