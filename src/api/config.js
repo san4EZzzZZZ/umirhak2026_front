@@ -1,8 +1,16 @@
 /**
  * Базовый URL REST API бэкенда на Kotlin (Ktor / Spring WebFlux и т.п.).
- * После сборки сервера задайте в .env: VITE_API_BASE_URL=http://localhost:8080
+ * Для прода задайте в .env: VITE_API_BASE_URL=http://<VPS_IP>:8080
+ * Если переменная не задана, берём текущий хост браузера и порт 8080.
  */
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
+const envBaseUrl = import.meta.env.VITE_API_BASE_URL;
+const fallbackBaseUrl =
+  typeof window !== "undefined"
+    ? `${window.location.protocol}//${window.location.hostname}:8080`
+    : "http://localhost:8080";
+
+export const API_BASE_URL =
+  typeof envBaseUrl === "string" && envBaseUrl.trim() ? envBaseUrl.trim() : fallbackBaseUrl;
 
 /**
  * Заголовки для вызовов Kotlin-бэкенда. После внедрения JWT подставьте токен из хранилища сессии.
